@@ -2,6 +2,8 @@ from flask import Flask
 from flask_login import LoginManager
 from .config import Config
 from .db import DB
+from .reviews import bp as reviews_bp
+
 
 
 login = LoginManager()
@@ -20,5 +22,9 @@ def create_app():
 
     from .users import bp as user_bp
     app.register_blueprint(user_bp)
+    # adding the reviews blueprint
+    from .reviews import bp as reviews_bp
+    app.register_blueprint(reviews_bp) 
+    ##
 
     return app

@@ -7,6 +7,7 @@ from .. import login
 
 class User(UserMixin):
     def __init__(self, user_id, email, first_name, last_name, address, current_balance, is_seller):
+        self.id = user_id  # Flask-Login需要id属性
         self.user_id = user_id
         self.email = email
         self.first_name = first_name
