@@ -8,6 +8,10 @@ from .models.product import Product
 
 bp = Blueprint('reviews', __name__)
 
+@bp.route('/user-reviews')
+def user_reviews_page():
+    return render_template('reviews.html')
+
 @bp.route('/api/reviews/recent/<int:user_id>', methods=['GET'])
 def get_recent_reviews(user_id):
     limit = request.args.get('limit', 5, type=int)

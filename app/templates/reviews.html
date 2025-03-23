@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<br><br>
+
+<h2>User Reviews</h2>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h4>Find Recent Reviews</h4>
+      </div>
+      <div class="card-body">
+        <form id="reviewSearchForm" class="form-inline">
+          <div class="form-group mb-2">
+            <label for="userIdInput" class="mr-2">User ID:</label>
+            <input type="number" class="form-control" id="userIdInput" placeholder="Enter User ID" min="0" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Find Reviews</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="mt-4" style="display: none;">
+  <h3>Recent Reviews for User <span id="resultUserId"></span></h3>
+  <div class="table-responsive">
+    <table class='table table-hover table-bordered'>
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Review ID</th>
+          <th scope="col">Comment</th>
+          <th scope="col">Date</th>
+          <th scope="col">Type</th>
+          <th scope="col">Target ID</th>
+          <th scope="col">Rating</th>
+        </tr>
+      </thead>
+      <tbody id="reviewTableBody">
+      </tbody>
+    </table>
+  </div>
+  <div id="noResults" class="alert alert-info" style="display: none;">
+    No reviews found.
+  </div>
+</div>
+
+<script>
+document.getElementById('reviewSearchForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const userId = document.getElementById('userIdInput').value;
+  
+  if (userId) {
+    // Update the UI
+    document.getElementById('resultUserId').textContent = userId;
+    document.getElementById('results').style.display = 'block';
+    
+    // Fetch data from API
+    fetch(`/api/reviews/recent/${userId}`)
+      .then(response => response.json())
+      .then(data => {
+        const tableBody = document.getElementById('reviewTableBody');
+        tableBody.innerHTML = '';
+        
+        if (data.length === 0) {
+          document.getElementById('noResults').style.display = 'block';
+        } else {
+          document.getElementById('noResults').style.display = 'none';
+          
+          data.forEach(review => {
+            const row = document.createElement('tr');
+            
+            // Determine review type
+            let type = 'N/A';
+            let targetId = 'N/A';
+            
+            if (review.product_id) {
+              type = 'Product';
+              targetId = review.product_id;
+            } else if (review.seller_id) {
+              type = 'Seller';
+              targetId = review.seller_id;
+            }
+            
+            row.innerHTML = `
+              <td>${review.review_id}</td>
+              <td>${review.comment}</td>
+              <td>${review.review_date}</td>
+              <td>${type}</td>
+              <td>${targetId}</td>
+              <td>${review.rating}/5</td>
+            `;
+            
+            tableBody.appendChild(row);
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching reviews:', error);
+        alert('Error fetching reviews. Please try again.');
+      });
+  }
+});
+</script>
+
+{% endblock %}
