@@ -6,4 +6,4 @@ poetry.lock
 .flaskenv
 *.xml
 *.meta
-*.iml
+*.iml.flaskenv
