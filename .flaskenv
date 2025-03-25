@@ -1,0 +1,10 @@
+FLASK_APP=amazon.py
+FLASK_DEBUG=True
+FLASK_RUN_HOST=0.0.0.0
+FLASK_RUN_PORT=8080
+SECRET_KEY=''
+DB_NAME=miniamazon
+DB_USER=miniamazon
+DB_PORT=5432
+DB_HOST=localhost
+DB_PASSWORD=amazon
