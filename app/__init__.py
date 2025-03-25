@@ -27,4 +27,7 @@ def create_app():
     app.register_blueprint(reviews_bp) 
     ##
 
+    from .seller import bp as seller_bp
+    app.register_blueprint(seller_bp)
+
     return app

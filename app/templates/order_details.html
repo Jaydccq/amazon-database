@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+
+{% block title %}Order Details | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Order #{{ order.order_id }}</h1>
+        <p class="text-muted">
+            Placed on {{ order.order_date.strftime('%B %d, %Y at %I:%M %p') }}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('seller.orders') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Orders
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Order Items</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.image %}
+                                            <img src="{{ item.image }}" alt="{{ item.product_name }}" width="40" class="me-2 rounded">
+                                        {% else %}
+                                            <div class="bg-light text-center rounded me-2" style="width: 40px; height: 40px; line-height: 40px;">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                        {% endif %}
+                                        {{ item.product_name }}
+                                    </div>
+                                </td>
+                                <td>${{ "%.2f"|format(item.price) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ "%.2f"|format(item.get_subtotal()) }}</td>
+                                <td>
+                                    {% if item.status == 'Fulfilled' %}
+                                        <span class="badge bg-success">Fulfilled</span>
+                                        <div class="small text-muted">
+                                            {{ item.fulfillment_date.strftime('%Y-%m-%d') }}
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.status == 'Unfulfilled' %}
+                                        <form method="POST" action="{{ url_for('seller.fulfill_item', order_item_id=item.order_item_id) }}">
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check"></i> Fulfill
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-success" disabled>
+                                            <i class="fas fa-check"></i> Fulfilled
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <strong>Status:</strong>
+                        {% set unfulfilled = [item for item in order.items if item.status == 'Unfulfilled']|length %}
+                        {% if unfulfilled == 0 %}
+                            <span class="badge bg-success">Fulfilled</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ unfulfilled }} item{% if unfulfilled > 1 %}s{% endif %} pending</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <strong>Total:</strong> ${{ "%.2f"|format(order.total_amount) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if unfulfilled > 0 %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Note:</strong> Once all items are fulfilled, the customer will be automatically notified.
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Customer Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Contact</h6>
+                    <p class="mb-0">{{ order.buyer_name }}</p>
+                </div>
+
+                <div>
+                    <h6>Shipping Address</h6>
+                    <address>
+                        {{ order.address|replace('\n', '<br>')|safe }}
+                    </address>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Items ({{ order.num_products }}):</span>
+                    <span>${{ "%.2f"|format(order.total_amount) }}</span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Total:</span>
+                    <span>${{ "%.2f"|format(order.total_amount) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

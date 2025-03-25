@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+
+{% block title %}Seller Dashboard | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Seller Dashboard</h1>
+        <p class="text-muted">Manage your products, inventory, and order fulfillment</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('seller.inventory') }}" class="btn btn-primary">
+            <i class="fas fa-boxes"></i> Manage Inventory
+        </a>
+        <a href="{{ url_for('seller.orders') }}" class="btn btn-success">
+            <i class="fas fa-shipping-fast"></i> View Orders
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Inventory</h5>
+                <h2 class="display-4">{{ inventory_count }}</h2>
+                <p class="card-text">Products in stock</p>
+                <a href="{{ url_for('seller.inventory') }}" class="text-white">View all <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Value</h5>
+                <h2 class="display-4">${{ "%.2f"|format(total_value) }}</h2>
+                <p class="card-text">Inventory value</p>
+                <a href="{{ url_for('seller.inventory') }}" class="text-white">View all <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h5 class="card-title">Low Stock</h5>
+                <h2 class="display-4">{{ low_stock_count }}</h2>
+                <p class="card-text">Products below threshold</p>
+                <a href="{{ url_for('seller.inventory') }}?low_stock=true" class="text-dark">View all <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Pending Orders</h5>
+                <h2 class="display-4">{{ unfulfilled_orders }}</h2>
+                <p class="card-text">Orders to fulfill</p>
+                <a href="{{ url_for('seller.orders') }}?status=Unfulfilled" class="text-white">View all <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Orders</h5>
+                <a href="{{ url_for('seller.orders') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_orders %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>#{{ order.order_id }}</td>
+                                    <td>{{ order.order_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ order.buyer_name }}</td>
+                                    <td>{{ order.items|length }}</td>
+                                    <td>
+                                        {% set unfulfilled = order.items|selectattr("status", "equalto", "Unfulfilled")|list|length %}
+                                        {% if unfulfilled == 0 %}
+                                            <span class="badge bg-success">Fulfilled</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">{{ unfulfilled }} Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('seller.order_details', order_id=order.order_id) }}" class="btn btn-sm btn-outline-primary">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted mb-0">No recent orders</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Inventory Overview</h5>
+                <a href="{{ url_for('seller.inventory') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if inventory_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
+                                    <th>Value</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in inventory_items %}
+                                <tr>
+                                    <td>{{ item.product_name }}</td>
+                                    <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                                    <td>
+                                        {% if item.quantity < 5 %}
+                                            <span class="text-danger">{{ item.quantity }}</span>
+                                        {% else %}
+                                            {{ item.quantity }}
+                                        {% endif %}
+                                    </td>
+                                    <td>${{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+                                    <td>
+                                        <a href="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}" class="btn btn-sm btn-outline-primary">
+                                            Edit
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted">Your inventory is empty</p>
+                        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Products
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

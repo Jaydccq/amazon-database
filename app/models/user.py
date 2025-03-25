@@ -2,7 +2,7 @@ from flask_login import UserMixin
 from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from .. import login
+# from .. import login
 
 
 class User(UserMixin):
@@ -62,7 +62,7 @@ RETURNING user_id
             return None
 
     @staticmethod
-    @login.user_loader
+    # @login.user_loader
     def get(user_id):
         rows = app.db.execute("""
 SELECT id, email, firstname, lastname, address, current_balance, is_seller
