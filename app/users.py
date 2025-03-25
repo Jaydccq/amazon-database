@@ -1,5 +1,5 @@
 from flask import render_template, redirect, url_for, flash, request
-from werkzeug.urls import url_parse
+from urllib.parse import urlsplit as url_parse
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, FloatField
@@ -10,7 +10,8 @@ from flask import Blueprint, current_app as app
 
 bp = Blueprint('users', __name__)
 
-
+# psql -h localhost -p 15432 -U miniamazon -d miniamazon
+#ssh -L 15432:localhost:5432 zs181@vcm-45418.vm.duke.edu
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])

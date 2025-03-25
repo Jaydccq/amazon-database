@@ -9,6 +9,10 @@ from .reviews import bp as reviews_bp
 login = LoginManager()
 login.login_view = 'users.login'
 
+@login.user_loader
+def load_user(user_id):
+    from .models.user import User
+    return User.get(user_id)
 
 def create_app():
     app = Flask(__name__)
