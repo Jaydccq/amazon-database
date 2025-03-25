@@ -1,47 +1,69 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <h1>Register</h1>
 
-<form action="" method="post">
+<form action="" method="post" novalidate>
   {{ form.hidden_tag() }}
-  <p>
-    {{ form.firstname.label }}<br/>
-    {{ form.firstname(size=32) }}<br/>
-    {% for error in form.firstname.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.lastname.label }}<br/>
-    {{ form.lastname(size=32) }}<br/>
-    {% for error in form.lastname.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.email.label }} (Could be fake email address)<br/>
-    {{ form.email(size=64) }}<br/>
-    {% for error in form.email.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password.label }}<br/>
-    {{ form.password(size=32) }}<br/>
-    {% for error in form.password.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password2.label }}<br/>
-    {{ form.password2(size=32) }}<br/>
-    {% for error in form.password2.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>{{ form.submit() }}</p>
-</form>
 
+  <!-- First Name -->
+  <div class="form-group">
+    {{ form.firstname.label }}
+    {{ form.firstname(size=32, class="form-control") }}
+    {% for error in form.firstname.errors %}
+      <div class="text-danger">[{{ error }}]</div>
+    {% endfor %}
+  </div>
+
+  <!-- Last Name -->
+  <div class="form-group">
+    {{ form.lastname.label }}
+    {{ form.lastname(size=32, class="form-control") }}
+    {% for error in form.lastname.errors %}
+      <div class="text-danger">[{{ error }}]</div>
+    {% endfor %}
+  </div>
+
+  <!-- Email -->
+  <div class="form-group">
+    {{ form.email.label }} <span class="text-muted">(can be fake)</span>
+    {{ form.email(size=64, class="form-control") }}
+    {% for error in form.email.errors %}
+      <div class="text-danger">[{{ error }}]</div>
+    {% endfor %}
+  </div>
+
+  <!-- Address -->
+  <div class="form-group">
+    {{ form.address.label }}
+    {{ form.address(size=64, class="form-control") }}
+    {% for error in form.address.errors %}
+      <div class="text-danger">[{{ error }}]</div>
+    {% endfor %}
+  </div>
+
+  <!-- Password -->
+  <div class="form-group">
+    {{ form.password.label }}
+    {{ form.password(size=32, class="form-control") }}
+    {% for error in form.password.errors %}
+      <div class="text-danger">[{{ error }}]</div>
+    {% endfor %}
+  </div>
+
+  <!-- Confirm Password -->
+  <div class="form-group">
+    {{ form.password2.label }}
+    {{ form.password2(size=32, class="form-control") }}
+    {% for error in form.password2.errors %}
+      <div class="text-danger">[{{ error }}]</div>
+    {% endfor %}
+  </div>
+
+  <!-- Submit -->
+  <div class="form-group mt-3">
+    {{ form.submit(class="btn btn-black") }}
+  </div>
+</form>
 {% endblock %}
+

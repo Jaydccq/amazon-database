@@ -1,14 +1,13 @@
 from flask import render_template, redirect, url_for, flash, request
 from werkzeug.urls import url_parse
-from flask_login import login_user, logout_user, current_user
+from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, FloatField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from .models.user import User
+from flask import Blueprint, current_app as app
 
-
-from flask import Blueprint
 bp = Blueprint('users', __name__)
 
 
@@ -38,10 +37,12 @@ def login():
     return render_template('login.html', title='Sign In', form=form)
 
 
+
 class RegistrationForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    address = StringField('Address', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(),
@@ -62,13 +63,50 @@ def register():
         if User.register(form.email.data,
                         form.password.data,
                         form.firstname.data,
-                        form.lastname.data):
+                        form.lastname.data,
+                        form.address.data
+                        ):
             flash('Congratulations, you are now a registered user!')
             return redirect(url_for('users.login'))
     return render_template('register.html', title='Register', form=form)
+
 
 
 @bp.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('index.index'))
+
+
+
+class TopUpForm(FlaskForm):
+    amount = FloatField('Amount', validators=[DataRequired()])
+    submit = SubmitField('Top Up')
+
+
+@bp.route('/topup', methods=['GET', 'POST'])
+@login_required
+def topup():
+    form = TopUpForm()
+    if form.validate_on_submit():
+        new_balance = current_user.current_balance + form.amount.data
+
+        app.db.execute("""
+            UPDATE Accounts
+            SET current_balance = :balance
+            WHERE user_id = :uid
+        """, balance=new_balance, uid=current_user.user_id)
+
+        current_user.current_balance = new_balance  
+        flash(f'Successfully topped up ${form.amount.data:.2f}!')
+        return redirect(url_for('users.profile'))
+
+    return render_template('topup.html', form=form)
+
+
+
+@bp.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
+
