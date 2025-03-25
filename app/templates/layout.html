@@ -15,7 +15,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home.index') }}">
+            <a class="navbar-brand" href="{{ url_for('index.index') }}">
                 <i class="fas fa-cookie-bite me-2"></i>Gingerbread
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -24,16 +24,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('home.index') }}">Home</a>
+                        <a class="nav-link" href="{{ url_for('index.index') }}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('product.browse') }}">Products</a>
+{#                        <a class="nav-link" href="{{ url_for('product.product_api') }}">Products</a>#}
                     </li>
                     {% if session.get('user_id') %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('cart.view') }}">
-                                <i class="fas fa-shopping-cart"></i> Cart
-                            </a>
+{#                            <a class="nav-link" href="{{ url_for('cart.view') }}">#}
+{#                                <i class="fas fa-shopping-cart"></i> Cart#}
+{#                            </a>#}
                         </li>
                     {% endif %}
                 </ul>
@@ -56,11 +56,11 @@
                                 <i class="fas fa-user"></i> {{ session.get('full_name', 'Account') }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ url_for('account.profile') }}">My Profile</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('account.orders') }}">My Orders</a></li>
-                                <li><a class="dropdown-item" href="{{ url_for('account.balance') }}">Balance</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('users.profile') }}">My Profile</a></li>
+{#                                <li><a class="dropdown-item" href="{{ url_for('users.orders') }}">My Orders</a></li>#}
+{#                                <li><a class="dropdown-item" href="{{ url_for('users.balance') }}">Balance</a></li>#}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('users.logout') }}">Logout</a></li>
                             </ul>
                         </li>
                     {% else %}
@@ -101,8 +101,8 @@
                 <div class="col-md-3">
                     <h5>Quick Links</h5>
                     <ul class="list-unstyled">
-                        <li><a class="text-white-50" href="{{ url_for('home.index') }}">Home</a></li>
-                        <li><a class="text-white-50" href="{{ url_for('product.browse') }}">Products</a></li>
+                        <li><a class="text-white-50" href="{{ url_for('index.index') }}">Home</a></li>
+{#                        <li><a class="text-white-50" href="{{ url_for('product.browse') }}">Products</a></li>#}
                         <li><a class="text-white-50" href="#">About</a></li>
                         <li><a class="text-white-50" href="#">Contact</a></li>
                     </ul>
@@ -111,12 +111,12 @@
                     <h5>Account</h5>
                     <ul class="list-unstyled">
                         {% if session.get('user_id') %}
-                            <li><a class="text-white-50" href="{{ url_for('account.profile') }}">My Profile</a></li>
-                            <li><a class="text-white-50" href="{{ url_for('account.orders') }}">My Orders</a></li>
-                            <li><a class="text-white-50" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                            <li><a class="text-white-50" href="{{ url_for('users.profile') }}">My Profile</a></li>
+{#                            <li><a class="text-white-50" href="{{ url_for('users.orders') }}">My Orders</a></li>#}
+                            <li><a class="text-white-50" href="{{ url_for('users.logout') }}">Logout</a></li>
                         {% else %}
-                            <li><a class="text-white-50" href="{{ url_for('auth.login') }}">Login</a></li>
-                            <li><a class="text-white-50" href="{{ url_for('auth.register') }}">Register</a></li>
+                            <li><a class="text-white-50" href="{{ url_for('users.login') }}">Login</a></li>
+                            <li><a class="text-white-50" href="{{ url_for('users.register') }}">Register</a></li>
                         {% endif %}
                     </ul>
                 </div>
