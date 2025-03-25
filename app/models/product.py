@@ -545,6 +545,11 @@ class Product:
 
     def to_dict(self):
         """Convert product to dictionary"""
+        inventory_items = []
+        try:
+            inventory_items = [inv.to_dict() for inv in self.get_inventory_items()]
+        except Exception as e:
+            print(f"Error fetching inventory for product {self.id}: {str(e)}")
         return {
             'id': self.id,
             'category_id': self.category_id,
@@ -557,5 +562,6 @@ class Product:
             'avg_rating': float(self.avg_rating) if self.avg_rating else 0,
             'review_count': self.review_count or 0,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
-            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
+            'inventory': inventory_items
         }
