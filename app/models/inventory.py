@@ -118,6 +118,24 @@ class Inventory:
         except Exception as e:
             print(f"Error creating inventory: {e}")
             return None
+    
+    @staticmethod
+    def to_dict(self):
+        return {
+            'inventory_id': self.inventory_id,
+            'seller_id': self.seller_id,
+            'seller_name': self.seller_name,
+            'unit_price': float(self.unit_price),
+            'quantity': self.quantity,
+            'product_id': self.product_id,
+            'product_name': self.product_name,
+            'category_id': self.category_id,
+            'category_name': self.category_name,
+            'image': self.image,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
 
     @staticmethod
     def update(inventory_id, seller_id, quantity=None, unit_price=None):

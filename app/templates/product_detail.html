@@ -1,0 +1,26 @@
+<!-- templates/product_detail.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<p>{{ product }}</p>
+<h1>{{ product.name }}</h1>
+<img src="{{ product.image }}" alt="{{ product.name }}" width="200">
+<p>{{ product.description }}</p>
+<p><strong>Category:</strong> {{ product.category_name }}</p>
+<p><strong>Average Rating:</strong> {{ product.avg_rating }} ({{ product.review_count }} reviews)</p>
+
+<h3>Available from sellers:</h3>
+<ul>
+  {% for item in product.inventory %}
+    <li>
+      {{ item.seller_name }} - ${{ item.unit_price }} ({{ item.quantity }} in stock)
+      <form action="{{ url_for('cart.add_to_cart') }}" method="POST" style="display:inline;">
+        <input type="hidden" name="product_id" value="{{ product.id }}">
+        <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
+        <input type="number" name="quantity" min="1" max="{{ item.quantity }}" value="1" required>
+        <button type="submit">Add to Cart</button>
+      </form>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}
