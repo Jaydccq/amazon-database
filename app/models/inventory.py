@@ -24,7 +24,7 @@ class Inventory:
         """Get a specific inventory item by ID"""
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, a.full_name AS seller_name,
+                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id
@@ -40,7 +40,7 @@ class Inventory:
         """Get inventory for a specific seller and product combination"""
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, a.full_name AS seller_name,
+                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id
@@ -56,7 +56,7 @@ class Inventory:
         """Get inventory items for a specific seller with optional filtering"""
         query = '''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, a.full_name AS seller_name,
+                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id
@@ -191,7 +191,7 @@ class Inventory:
         """Get all sellers offering a specific product"""
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, a.full_name AS seller_name,
+                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id

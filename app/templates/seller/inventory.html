@@ -1,0 +1,242 @@
+{% extends "layout.html" %}
+
+{% block title %}Inventory Management | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Inventory Management</h1>
+        <p class="text-muted">Manage your product stock and pricing</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Products
+        </a>
+        <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <form method="GET" action="{{ url_for('seller.inventory') }}" class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search products..." value="{{ search_query or '' }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="category_id" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if current_category|int == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                {% if search_query or current_category %}
+                    <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-secondary w-100">
+                        Clear Filters
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        {% if inventory_items %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Total Value</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory_items %}
+                        <tr>
+                            <td>
+                                {% if item.image %}
+                                    <img src="{{ item.image }}" alt="{{ item.product_name }}" width="40" class="me-2 rounded">
+                                {% else %}
+                                    <div class="bg-light text-center rounded me-2 d-inline-block" style="width: 40px; height: 40px; line-height: 40px;">
+                                        <i class="fas fa-box"></i>
+                                    </div>
+                                {% endif %}
+                                {{ item.product_name }}
+                            </td>
+                            <td>{{ item.category_name }}</td>
+                            <td>${{ "%.2f"|format(item.unit_price) }}</td>
+                            <td>
+                                {% if item.quantity < 5 %}
+                                    <span class="text-danger fw-bold">{{ item.quantity }}</span>
+                                    <span class="badge bg-danger">Low Stock</span>
+                                {% else %}
+                                    {{ item.quantity }}
+                                {% endif %}
+                            </td>
+                            <td>${{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+                            <td>{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.inventory_id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ item.inventory_id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Removal</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Are you sure you want to remove <strong>{{ item.product_name }}</strong> from your inventory?</p>
+                                                <p class="text-danger">This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form method="POST" action="{{ url_for('seller.delete_inventory', inventory_id=item.inventory_id) }}">
+                                                    <button type="submit" class="btn btn-danger">Remove</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+                <!-- Correct Pagination -->
+                {% if pagination.pages > 1 %}
+                    <div class="d-flex justify-content-center py-3">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if pagination.page > 1 %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('seller.inventory', page=(pagination.page-1), search=search_query, category_id=current_category) }}">
+                                            <i class="fas fa-chevron-left"></i> Previous
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                                    </li>
+                                {% endif %}
+
+                                {% for i in range(1, pagination.pages + 1) %}
+                                    {% if i == pagination.page %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ i }}</span>
+                                        </li>
+                                    {% elif i >= pagination.page - 2 and i <= pagination.page + 2 %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('seller.inventory', page=i, search=search_query, category_id=current_category) }}">{{ i }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if pagination.page < pagination.pages %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('seller.inventory', page=(pagination.page+1), search=search_query, category_id=current_category) }}">
+                                            Next <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            <div class="text-center p-5">
+                {% if search_query or current_category %}
+                    <h5>No products match your search criteria</h5>
+                    <p class="text-muted">Try using different keywords or categories</p>
+                    <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-sync"></i> Clear Filters
+                    </a>
+                {% else %}
+                    <h5>Your inventory is empty</h5>
+                    <p class="text-muted">Start adding products to your inventory</p>
+                    <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Products
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Inventory Statistics -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card bg-light mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Inventory Summary</h5>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Products:</span>
+                    <span class="fw-bold">{{ inventory_items|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Value:</span>
+                    <span class="fw-bold">${{ "%.2f"|format(inventory_items|sum(attribute='quantity')|float * inventory_items|sum(attribute='unit_price')|float) }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Low Stock Items:</span>
+                    <span class="fw-bold text-danger">{{ inventory_items|selectattr('quantity', 'lt', 5)|list|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card bg-light mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-plus"></i> Add Products
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{{ url_for('seller.orders') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-shipping-fast"></i> View Orders
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -30,6 +30,11 @@ def login():
             flash('Invalid email or password')
             return redirect(url_for('users.login'))
         login_user(user)
+
+        from flask import session
+        session['full_name'] = user.first_name + ' ' + user.last_name
+        session['is_seller'] = user.is_seller
+
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index.index')

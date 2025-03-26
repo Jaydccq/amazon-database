@@ -148,7 +148,7 @@ class Product:
         rows = app.db.execute('''
             SELECT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
@@ -156,7 +156,7 @@ class Product:
             JOIN Accounts a ON p.owner_id = a.user_id
             LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
             WHERE p.product_id = :product_id
-            GROUP BY p.product_id, c.category_name, a.full_name
+            GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
         ''', product_id=product_id)
 
         return Product(*(rows[0])) if rows else None
@@ -167,14 +167,14 @@ class Product:
         rows = app.db.execute('''
             SELECT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
             JOIN Products_Categories c ON p.category_id = c.category_id
             JOIN Accounts a ON p.owner_id = a.user_id
             LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
-            GROUP BY p.product_id, c.category_name, a.full_name
+            GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
             ORDER BY p.product_name
         ''')
 
@@ -186,7 +186,7 @@ class Product:
         rows = app.db.execute('''
             SELECT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
@@ -194,7 +194,7 @@ class Product:
             JOIN Accounts a ON p.owner_id = a.user_id
             LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
             WHERE p.category_id = :category_id
-            GROUP BY p.product_id, c.category_name, a.full_name
+            GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
             ORDER BY p.product_name
         ''', category_id=category_id)
 
@@ -206,7 +206,7 @@ class Product:
         rows = app.db.execute('''
             SELECT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
@@ -214,7 +214,7 @@ class Product:
             JOIN Accounts a ON p.owner_id = a.user_id
             LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
             WHERE p.owner_id = :owner_id
-            GROUP BY p.product_id, c.category_name, a.full_name
+            GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
             ORDER BY p.product_name
         ''', owner_id=owner_id)
 
@@ -228,7 +228,7 @@ class Product:
         base_query = '''
             SELECT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
@@ -272,7 +272,7 @@ class Product:
             base_query += " WHERE " + " AND ".join(where_clauses)
 
         # Add GROUP BY
-        base_query += " GROUP BY p.product_id, c.category_name, a.full_name"
+        base_query += " GROUP BY p.product_id, c.category_name, a.first_name, a.last_name"
 
         # Add ORDER BY
         if sort_by == 'name':
@@ -498,14 +498,14 @@ class Product:
         rows = app.db.execute('''
             SELECT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
             JOIN Products_Categories c ON p.category_id = c.category_id
             JOIN Accounts a ON p.owner_id = a.user_id
             LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
-            GROUP BY p.product_id, c.category_name, a.full_name
+            GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT :limit
         ''', limit=limit)
@@ -518,7 +518,7 @@ class Product:
         rows = app.db.execute('''
             SELECT DISTINCT p.product_id, p.category_id, p.product_name, p.description, 
                    p.image, p.owner_id, p.created_at, p.updated_at, 
-                   c.category_name, a.full_name AS owner_name,
+                   c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
                    COALESCE(AVG(r.rating), 0) as avg_rating,
                    COUNT(r.review_id) as review_count
             FROM Products p
@@ -527,7 +527,7 @@ class Product:
             JOIN Inventory i ON p.product_id = i.product_id
             LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
             WHERE i.quantity > 0
-            GROUP BY p.product_id, c.category_name, a.full_name
+            GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
             ORDER BY p.product_name
         ''')
 
