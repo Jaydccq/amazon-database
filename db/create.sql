@@ -47,19 +47,22 @@
 -- Drop tables if they exist (in reverse order of dependencies)
 DROP TABLE IF EXISTS Orders_Products;
 DROP TABLE IF EXISTS Orders;
-DROP TABLE IF EXISTS Reviews_Feedbacks;
-DROP TABLE IF EXISTS Cart_Products;
-DROP TABLE IF EXISTS Inventory;
-DROP TABLE IF EXISTS Products;
-DROP TABLE IF EXISTS Products_Categories;
-DROP TABLE IF EXISTS Carts;
-DROP TABLE IF EXISTS Accounts;
+DROP TABLE IF EXISTS Inventory CASCADE ;
+DROP TABLE IF EXISTS Products CASCADE;
+DROP TABLE IF EXISTS Carts CASCADE;
+DROP TABLE IF EXISTS Accounts CASCADE;
+DROP TABLE IF EXISTS Reviews_Feedbacks CASCADE;
+DROP TABLE IF EXISTS Cart_Products CASCADE;
+
+DROP TABLE IF EXISTS Products_Categories CASCADE;
+
 
 -- Create Accounts table
 CREATE TABLE Accounts (
     user_id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     address TEXT,
     password VARCHAR(255) NOT NULL,
     current_balance DECIMAL(10,2) DEFAULT 0.00,
@@ -205,6 +208,8 @@ COMMENT ON TABLE Orders IS 'Order information';
 COMMENT ON TABLE Orders_Products IS 'Products within an order with specific seller and status';
 
 -- Create views to simplify complex queries
+-- Modified to use first_name and last_name instead of non-existent full_name
+
 CREATE OR REPLACE VIEW product_details AS
 SELECT
     p.product_id,
@@ -214,7 +219,7 @@ SELECT
     p.category_id,
     pc.category_name,
     p.owner_id,
-    a.full_name AS owner_name,
+    CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
     p.created_at,
     p.updated_at,
     COALESCE(AVG(r.rating), 0) AS average_rating,
@@ -223,13 +228,13 @@ FROM Products p
 JOIN Products_Categories pc ON p.category_id = pc.category_id
 JOIN Accounts a ON p.owner_id = a.user_id
 LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
-GROUP BY p.product_id, pc.category_name, a.full_name;
+GROUP BY p.product_id, pc.category_name, a.first_name, a.last_name;
 
 CREATE OR REPLACE VIEW inventory_details AS
 SELECT
     i.inventory_id,
     i.seller_id,
-    a.full_name AS seller_name,
+    CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
     i.product_id,
     p.product_name,
     p.category_id,
@@ -245,4 +250,4 @@ JOIN Accounts a ON i.seller_id = a.user_id
 JOIN Products p ON i.product_id = p.product_id
 JOIN Products_Categories pc ON p.category_id = pc.category_id
 LEFT JOIN Reviews_Feedbacks r ON i.seller_id = r.seller_id
-GROUP BY i.inventory_id, a.full_name, p.product_name, p.category_id, pc.category_name, p.image;
+GROUP BY i.inventory_id, a.first_name, a.last_name, p.product_name, p.category_id, pc.category_name, p.image;

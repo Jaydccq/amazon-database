@@ -17,13 +17,14 @@ def seller_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            session['user_id'] = 1
-            # flash('Please log in to access this page.', 'error')
-            # return redirect(url_for('auth.login'))
+            print(session)
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('auth.login'))
 
-        # if not session.get('is_seller'):
-            # flash('You must be registered as a seller to access this page.', 'error')
-            # return redirect(url_for('home.index'))
+        if not session.get('is_seller'):
+            flash('You must be registered as a seller to access this page.', 'error')
+            print(session)
+            return redirect(url_for('index.index'))
 
         return f(*args, **kwargs)
 
@@ -165,25 +166,53 @@ def add_inventory():
             return redirect(url_for('seller.add_inventory'))
 
     # GET request - show form with available products
-    # Get products not already in inventory
 
-    # Get all products
+    # GET request - show form with available products
+
+    # Get search parameters
+    search_query = request.args.get('search', '')
+    current_category = request.args.get('category_id', '')
+
+    # Get all products first
     all_products = Product.get_all()
+    filtered_products = []
+
+    # Apply filters if needed
+    for p in all_products:
+        # Skip if category filter is active and doesn't match
+        if current_category and str(p.category_id) != current_category:
+            continue
+
+        # Skip if search is active and doesn't match
+        if search_query and search_query.lower() not in p.product_name.lower():
+            continue
+
+        filtered_products.append(p)
 
     # Get existing inventory product IDs
     existing_inventory = Inventory.get_for_seller(user_id)
     existing_product_ids = {item.product_id for item in existing_inventory}
 
     # Filter out products already in inventory
-    available_products = [p for p in all_products if p.id not in existing_product_ids]
+    available_products = [p for p in filtered_products if p.id not in existing_product_ids]
 
     # Get categories for grouping products
     categories = {cat.id: cat.name for cat in Category.get_all()}
 
+    # Make sure Product objects have the right attributes for the template
+    for p in available_products:
+        # Add id and name attributes if they don't exist
+        if not hasattr(p, 'id'):
+            p.id = p.product_id
+        if not hasattr(p, 'name'):
+            p.name = p.product_name
+
     return render_template(
         'seller/add_inventory.html',
         available_products=available_products,
-        categories=categories
+        categories=categories,
+        search_query=search_query,
+        current_category=current_category
     )
 
 

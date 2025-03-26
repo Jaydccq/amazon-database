@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Inventory | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Edit Inventory Item</h1>
+        <p class="text-muted">Update product quantity and pricing</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Inventory
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Update "{{ item.product_name }}" Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Quantity in Stock</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity"
+                                       value="{{ item.quantity }}" min="0" required>
+                                <div class="form-text">Enter the number of units available for sale.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="unit_price" class="form-label">Unit Price ($)</label>
+                                <input type="number" class="form-control" id="unit_price" name="unit_price"
+                                       value="{{ item.unit_price }}" min="0.01" step="0.01" required>
+                                <div class="form-text">Set the price for each unit.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Product Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if item.image %}
+                        <img src="{{ item.image }}" alt="{{ item.product_name }}" class="img-fluid rounded mb-3" style="max-height: 150px; object-fit: contain;">
+                    {% else %}
+                        <div class="bg-light text-center rounded mb-3 py-4">
+                            <i class="fas fa-box fa-3x text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-muted">Product Name</h6>
+                    <p class="mb-0">{{ item.product_name }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-muted">Category</h6>
+                    <p class="mb-0">{{ item.category_name }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-muted">Current Value</h6>
+                    <p class="mb-0">${{ "%.2f"|format(item.quantity * item.unit_price) }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <h6 class="text-muted">Last Updated</h6>
+                    <p class="mb-0">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Danger Zone</h5>
+            </div>
+            <div class="card-body">
+                <p>Remove this product from your inventory</p>
+                <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fas fa-trash"></i> Remove Product
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Removal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove <strong>{{ item.product_name }}</strong> from your inventory?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('seller.delete_inventory', inventory_id=item.inventory_id) }}">
+                    <button type="submit" class="btn btn-danger">Remove</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

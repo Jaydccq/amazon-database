@@ -28,7 +28,7 @@ class OrderItem:
         rows = app.db.execute('''
             SELECT op.order_item_id, op.order_id, op.product_id, op.quantity, 
                    op.price, op.seller_id, op.status, op.fulfillment_date,
-                   p.product_name, a.full_name AS seller_name, p.image
+                   p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name, p.image
             FROM Orders_Products op
             JOIN Products p ON op.product_id = p.product_id
             JOIN Accounts a ON op.seller_id = a.user_id
@@ -43,12 +43,12 @@ class OrderItem:
         rows = app.db.execute('''
             SELECT op.order_item_id, op.order_id, op.product_id, op.quantity, 
                    op.price, op.seller_id, op.status, op.fulfillment_date,
-                   p.product_name, a.full_name AS seller_name, p.image
+                   p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name, p.image
             FROM Orders_Products op
             JOIN Products p ON op.product_id = p.product_id
             JOIN Accounts a ON op.seller_id = a.user_id
             WHERE op.order_id = :order_id
-            ORDER BY a.full_name, p.product_name
+            ORDER BY a.first_name,a.last_name, p.product_name
         ''', order_id=order_id)
 
         return [OrderItem(*row) for row in rows]
@@ -59,7 +59,7 @@ class OrderItem:
         rows = app.db.execute('''
             SELECT op.order_item_id, op.order_id, op.product_id, op.quantity, 
                    op.price, op.seller_id, op.status, op.fulfillment_date,
-                   p.product_name, a.full_name AS seller_name, p.image
+                   p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name, p.image
             FROM Orders_Products op
             JOIN Products p ON op.product_id = p.product_id
             JOIN Accounts a ON op.seller_id = a.user_id
@@ -128,7 +128,7 @@ class Order:
         """Get order details by ID"""
         rows = app.db.execute('''
             SELECT o.order_id, o.buyer_id, o.total_amount, o.order_date, 
-                   o.num_products, o.order_status, a.full_name AS buyer_name, 
+                   o.num_products, o.order_status, CONCAT(a.first_name, ' ', a.last_name) AS buyer_name, 
                    a.address
             FROM Orders o
             JOIN Accounts a ON o.buyer_id = a.user_id
@@ -148,7 +148,7 @@ class Order:
         """Get orders for a specific buyer"""
         query = '''
             SELECT o.order_id, o.buyer_id, o.total_amount, o.order_date, 
-                   o.num_products, o.order_status, a.full_name AS buyer_name, 
+                   o.num_products, o.order_status, CONCAT(a.first_name, ' ', a.last_name) AS buyer_name, 
                    a.address
             FROM Orders o
             JOIN Accounts a ON o.buyer_id = a.user_id
@@ -192,7 +192,7 @@ class Order:
         """Get orders containing items sold by a specific seller"""
         query = '''
             SELECT DISTINCT o.order_id, o.buyer_id, o.total_amount, o.order_date, 
-                   o.num_products, o.order_status, a.full_name AS buyer_name, 
+                   o.num_products, o.order_status, CONCAT(a.first_name, ' ', a.last_name) AS buyer_name, 
                    a.address
             FROM Orders o
             JOIN Orders_Products op ON o.order_id = op.order_id

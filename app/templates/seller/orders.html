@@ -57,7 +57,7 @@
                             <td>{{ order.buyer_name }}</td>
                             <td>{{ order.items|length }}</td>
                             <td>
-                                {% set unfulfilled = [item for item in order.items if item.status == 'Unfulfilled']|length %}
+                                {% set unfulfilled = order.items|selectattr("status", "equalto", "Unfulfilled")|list|length %}
                                 {% if unfulfilled == 0 %}
                                     <span class="badge bg-success">Fulfilled</span>
                                 {% else %}
@@ -82,7 +82,7 @@
                         <ul class="pagination">
                             {% if pagination.page > 1 %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('seller.orders', page=pagination.page-1, status=current_status) }}">
+                                    <a class="page-link" href="{{ url_for('seller.orders', page=(pagination.page), status=current_status) }}">
                                         <i class="fas fa-chevron-left"></i> Previous
                                     </a>
                                 </li>
@@ -106,7 +106,7 @@
 
                             {% if pagination.page < pagination.pages %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('seller.orders', page=pagination.page+1, status=current_status) }}">
+                                    <a class="page-link" href="{{ url_for('seller.orders', page=pagination.page, status=current_status) }}">
                                         Next <i class="fas fa-chevron-right"></i>
                                     </a>
                                 </li>
