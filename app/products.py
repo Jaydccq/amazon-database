@@ -3,16 +3,21 @@ from app.models.product import Product
 
 bp = Blueprint("product", __name__, url_prefix="/products")
 
-@bp.route("/")
+@bp.route('/products')
 def product_list():
-    k = request.args.get('k')
-    category_id = request.args.get('category_id')
+    try:
+        k = int(request.args.get('k'))
+    except (TypeError, ValueError):
+        k = None
 
-    k = int(k) if k and k.isdigit() else None
-    category_id = int(category_id) if category_id and category_id.isdigit() else None
+    try:
+        category_id = int(request.args.get('category_id'))
+    except (TypeError, ValueError):
+        category_id = None
 
     products = Product.get_all_with_min_price(k=k, category_id=category_id)
     return render_template('products.html', products=products)
+
 
 @bp.route("/<int:product_id>")
 def product_detail(product_id):

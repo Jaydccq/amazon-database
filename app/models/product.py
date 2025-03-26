@@ -234,23 +234,29 @@ class Product:
         conditions = []
         params = {}
 
-        if category_id:
+        # 加入分类筛选
+        if category_id is not None:
             conditions.append("p.category_id = :category_id")
             params["category_id"] = category_id
 
+        # 拼接 WHERE 条件
         if conditions:
             base_query += " WHERE " + " AND ".join(conditions)
 
+        # 分组：对 product 聚合价格
         base_query += " GROUP BY p.product_id, p.product_name"
 
-        if k:
-            base_query += " ORDER BY price DESC LIMIT :k"
-            params["k"] = k
-        else:
-            base_query += " ORDER BY p.product_id"
+        # 排序 + LIMIT：无论有没有 category，只要有 k，就按价格排
+        base_query += " ORDER BY price DESC"
 
+        if k is not None:
+            base_query += " LIMIT :k"
+            params["k"] = k
+
+        # 执行查询
         rows = app.db.execute(base_query, **params)
 
+        # 组装结果
         products = []
         for row in rows:
             products.append({
@@ -260,6 +266,8 @@ class Product:
             })
 
         return products
+
+
 
 
     @staticmethod
