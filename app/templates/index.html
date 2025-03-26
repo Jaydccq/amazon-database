@@ -4,6 +4,30 @@
 
 <br><br>
 
+<form method="get" action="{{ url_for('index.index') }}" class="form-inline mb-3">
+  <!-- sort dropdown -->
+  <select name="sort_by" class="form-control mr-2">
+    <option value="">Sort By</option>
+    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+  </select>
+
+  <!-- k value -->
+  <input type="number" name="k" class="form-control mr-2" placeholder="Top K" value="{{ k or '' }}" min="1">
+
+  <!-- new category filter -->
+  <select name="category_id" class="form-control mr-2">
+    <option value="">All Categories</option>
+    {% for category in categories %}
+      <option value="{{ category.id }}" {% if category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit" class="btn btn-primary">Apply</button>
+</form>
+
+
+
 <h2>Products for sale:</h2>
 <table class='table table-hover table-bordered container'>
   <thead class="thead-dark">

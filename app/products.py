@@ -1,12 +1,18 @@
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify,request
 from app.models.product import Product
 
 bp = Blueprint("product", __name__, url_prefix="/products")
 
 @bp.route("/")
 def product_list():
-    products = Product.get_all_with_min_price()
-    return render_template("product_list.html", products=products)
+    k = request.args.get('k')
+    category_id = request.args.get('category_id')
+
+    k = int(k) if k and k.isdigit() else None
+    category_id = int(category_id) if category_id and category_id.isdigit() else None
+
+    products = Product.get_all_with_min_price(k=k, category_id=category_id)
+    return render_template('products.html', products=products)
 
 @bp.route("/<int:product_id>")
 def product_detail(product_id):

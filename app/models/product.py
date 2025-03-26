@@ -222,17 +222,34 @@ class Product:
     
 
     @classmethod
-    def get_all_with_min_price(cls):
-        rows = app.db.execute("""
+    def get_all_with_min_price(cls, k=None, category_id=None):
+        base_query = """
             SELECT
                 p.product_id,
                 p.product_name,
                 MIN(i.unit_price) AS price
             FROM Products p
             JOIN Inventory i ON p.product_id = i.product_id
-            GROUP BY p.product_id, p.product_name
-            ORDER BY price DESC;
-        """)
+        """
+        conditions = []
+        params = {}
+
+        if category_id:
+            conditions.append("p.category_id = :category_id")
+            params["category_id"] = category_id
+
+        if conditions:
+            base_query += " WHERE " + " AND ".join(conditions)
+
+        base_query += " GROUP BY p.product_id, p.product_name"
+
+        if k:
+            base_query += " ORDER BY price DESC LIMIT :k"
+            params["k"] = k
+        else:
+            base_query += " ORDER BY p.product_id"
+
+        rows = app.db.execute(base_query, **params)
 
         products = []
         for row in rows:
@@ -241,6 +258,7 @@ class Product:
                 'name': row[1],
                 'price': row[2]
             })
+
         return products
 
 
