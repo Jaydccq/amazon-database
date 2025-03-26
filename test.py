@@ -54,6 +54,6 @@ if __name__ == "__main__":
     db_user = "postgres"
     db_password = "passw0rd"
     db_host = "localhost"  # 数据库服务器地址，本地通常为localhost
-    db_port = "5432"  # PostgreSQL默认端口为5432
+    db_port = "15432"  # PostgreSQL默认端口为5432
 
     test_connection(db_name, db_user, db_password, db_host, db_port)

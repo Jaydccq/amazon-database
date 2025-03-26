@@ -27,7 +27,7 @@ class Review:
         rows = app.db.execute('''
         SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating
         FROM Reviews_Feedbacks
-        WHERE user_id = :user_id
+        WHERE user_id = :user_id AND review_date IS NOT NULL
         ORDER BY review_date DESC
         LIMIT :limit
         ''',
