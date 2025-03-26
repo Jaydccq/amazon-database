@@ -4,7 +4,6 @@ import datetime
 
 from .models.orders import Order
 from .models.product import Product
-from .models.purchase import Purchase
 
 from flask import Blueprint
 bp = Blueprint('index', __name__)

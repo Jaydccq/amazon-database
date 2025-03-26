@@ -219,7 +219,7 @@ SELECT
     p.category_id,
     pc.category_name,
     p.owner_id,
-    CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
+    CONCAT(COALESCE(a.first_name, ''), ' ', COALESCE(a.last_name, '')) AS owner_name,
     p.created_at,
     p.updated_at,
     COALESCE(AVG(r.rating), 0) AS average_rating,

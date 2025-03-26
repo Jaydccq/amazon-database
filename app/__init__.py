@@ -2,7 +2,6 @@ from flask import Flask
 from flask_login import LoginManager
 from .config import Config
 from .db import DB
-from .reviews import bp as reviews_bp
 
 
 

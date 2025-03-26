@@ -16,7 +16,7 @@ class Review:
     def get(review_id):
         rows = app.db.execute('''
         SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating
-        FROM Reviews
+        FROM Reviews_Feedbacks
         WHERE review_id = :review_id
         ''',
         review_id=review_id)
@@ -26,7 +26,7 @@ class Review:
     def get_recent5_by_user(user_id, limit=5):
         rows = app.db.execute('''
         SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating
-        FROM Reviews
+        FROM Reviews_Feedbacks
         WHERE user_id = :user_id
         ORDER BY review_date DESC
         LIMIT :limit
@@ -39,7 +39,7 @@ class Review:
     def get_product_review(product_id):
         rows = app.db.execute('''
         SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating
-        FROM Reviews
+        FROM Reviews_Feedbacks
         WHERE product_id = :product_id
         ORDER BY review_date DESC
         ''',
@@ -50,7 +50,7 @@ class Review:
     def get_seller_review(seller_id):
         rows = app.db.execute('''
         SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating
-        FROM Reviews
+        FROM Reviews_Feedbacks
         WHERE seller_id = :seller_id
         ORDER BY review_date DESC
         ''',
@@ -66,7 +66,7 @@ class Review:
             raise ValueError("Rating must be between 0 and 5")
 
         rows = app.db.execute('''
-        INSERT INTO Reviews(user_id, comment, product_id, seller_id, rating)
+        INSERT INTO Reviews_Feedbacks(user_id, comment, product_id, seller_id, rating)
         VALUES(:user_id, :comment, :product_id, :seller_id, :rating)
         RETURNING review_id
         ''',
@@ -103,7 +103,7 @@ class Review:
         update_query.append("review_date = CURRENT_TIMESTAMP")
         
         query = f'''
-        UPDATE Reviews
+        UPDATE Reviews_Feedbacks
         SET {', '.join(update_query)}
         WHERE review_id = :review_id
         RETURNING review_id
@@ -118,7 +118,7 @@ class Review:
     def delete(review_id):
 
         rows = app.db.execute('''
-        DELETE FROM Reviews
+        DELETE FROM Reviews_Feedbacks
         WHERE review_id = :review_id
         RETURNING review_id
         ''',
@@ -129,7 +129,7 @@ class Review:
     def get_avg_rating_product(product_id):
         rows = app.db.execute('''
         SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
-        FROM Reviews
+        FROM Reviews_Feedbacks
         WHERE product_id = :product_id
         ''',
         product_id=product_id)
@@ -139,7 +139,7 @@ class Review:
     def get_avg_rating_seller(seller_id):
         rows = app.db.execute('''
         SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
-        FROM Reviews
+        FROM Reviews_Feedbacks
         WHERE seller_id = :seller_id
         ''',
         seller_id=seller_id)
