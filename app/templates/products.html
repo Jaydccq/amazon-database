@@ -1,0 +1,25 @@
+<table>
+    <thead>
+      <tr>
+        <th>Product ID</th>
+        <th>Product Name</th>
+        <th>Price</th>  <!-- 🟡 价格列 -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>{{ product.id }}</td>
+        <td><a href="{{ url_for('products.detail', product_id=product.id) }}">{{ product.name }}</a></td>
+        <td>
+          {% if product.unit_price %}
+            ${{ product.unit_price }}
+          {% else %}
+            N/A
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  

@@ -1,8 +1,12 @@
-# app/product.py
 from flask import Blueprint, render_template, jsonify, request
 from app.models.product import Product
 
 bp = Blueprint("product", __name__, url_prefix="/products")
+
+@bp.route("/")
+def product_list():
+    products = Product.get_all_with_min_price()
+    return render_template("product_list.html", products=products)
 
 @bp.route("/<int:product_id>")
 def product_detail(product_id):
@@ -19,4 +23,3 @@ def product_api(product_id):
         return jsonify({"error": "Product not found"}), 404
 
     return jsonify(product.to_dict())
-

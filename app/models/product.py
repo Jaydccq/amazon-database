@@ -219,6 +219,30 @@ class Product:
         ''', owner_id=owner_id)
 
         return [Product(*row) for row in rows]
+    
+
+    @classmethod
+    def get_all_with_min_price(cls):
+        rows = app.db.execute("""
+            SELECT
+                p.product_id,
+                p.product_name,
+                MIN(i.unit_price) AS price
+            FROM Products p
+            JOIN Inventory i ON p.product_id = i.product_id
+            GROUP BY p.product_id, p.product_name
+            ORDER BY price DESC;
+        """)
+
+        products = []
+        for row in rows:
+            products.append({
+                'id': row[0],
+                'name': row[1],
+                'price': row[2]
+            })
+        return products
+
 
     @staticmethod
     def search(query=None, category_id=None, min_price=None, max_price=None,
