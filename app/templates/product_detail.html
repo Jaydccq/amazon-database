@@ -1,26 +1,130 @@
-<!-- templates/product_detail.html -->
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
 {% block content %}
-<p>{{ product }}</p>
-<h1>{{ product.name }}</h1>
-<img src="{{ product.image }}" alt="{{ product.name }}" width="200">
-<p>{{ product.description }}</p>
-<p><strong>Category:</strong> {{ product.category_name }}</p>
-<p><strong>Average Rating:</strong> {{ product.avg_rating }} ({{ product.review_count }} reviews)</p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index.index') }}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Product Details</li>
+                </ol>
+            </nav>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h1 class="h3 mb-0">{{ product.name }}</h1>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-5 mb-4">
+{#                            {% if product.image %}#}
+{#                            <img src="{{ product.image }}" alt="{{ product.name }}" class="img-fluid rounded">#}
+{#                            {% else %}#}
+{#                            <div class="bg-light text-center p-5 rounded">#}
+{#                                <i class="fas fa-image fa-4x text-muted"></i>#}
+{#                                <p class="mt-3 text-muted">No image available</p>#}
+{#                            </div>#}
+{#                            {% endif %}#}
+                        </div>
+                        <div class="col-md-7">
+                            <h5 class="text-muted mb-3">Product Details</h5>
+                            <p>{{ product.description }}</p>
+                            
+                            <div class="d-flex align-items-center mb-3">
+                                <h6 class="mb-0 mr-2">Category:</h6>
+                                <span class="badge bg-secondary">{{ product.category_name }}</span>
+                            </div>
+                            
+{#                            <div class="d-flex align-items-center mb-3">#}
+{#                                <h6 class="mb-0 mr-2">Rating:</h6>#}
+{#                                {% for i in range(1, 6) %}#}
+{#                                    {% if i <= product.avg_rating|int %}#}
+{#                                    <i class="fas fa-star text-warning"></i>#}
+{#                                    {% else %}#}
+{#                                    <i class="far fa-star text-warning"></i>#}
+{#                                    {% endif %}#}
+{#                                {% endfor %}#}
+{#                                <span class="ml-2">({{ product.review_count }} reviews)</span>#}
+{#                            </div>#}
+                            
+                            <div class="d-flex align-items-center mb-3">
+                                <h6 class="mb-0 mr-2">Seller:</h6>
+                                <span>{{ product.owner_name }}</span>
+                            </div>
+                            
+                            <hr>
+                            
+                            {% if product.inventory %}
+                            <h5 class="mb-3">Purchase Options</h5>
+                            <div class="list-group">
+                                {% for item in product.inventory %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Seller: {{ item.seller_name }}</strong>
+                                            <p class="mb-0 text-success">In Stock: {{ item.quantity }} units</p>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-primary mb-0">${{ "%.2f"|format(item.unit_price) }}</h4>
+                                            {% if current_user.is_authenticated %}
+                                            <form action="{{ url_for('cart.add_to_cart') }}" method="POST" class="mt-2">
+                                                <div class="input-group">
+                                                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                                                    <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
+                                                    <input type="number" name="quantity" value="1" min="1" max="{{ item.quantity }}" class="form-control form-control-sm">
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-cart-plus"></i> Add to Cart
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            {% else %}
+                                            <a href="{{ url_for('users.login') }}" class="btn btn-outline-primary btn-sm">
+                                                Login to Purchase
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+{#                            <div class="alert alert-warning">#}
+{#                                <i class="fas fa-exclamation-triangle mr-2"></i>#}
+{#                                This product is currently out of stock#}
+{#                            </div>#}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Product Reviews ({{ product.review_count }})</h5>
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('reviews.add_review', product_id=product.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-comment"></i> Add Review
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if product.review_count > 0 %}
+                    <div class="list-group">
+                        <div class="alert alert-info">
+                            <a href="{{ url_for('reviews.product_reviews', product_id=product.id) }}">View All Reviews</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">
+                        <i class="fas fa-comment-slash fa-2x mb-2"></i><br>
+                        No reviews yet. Be the first to review this product!
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-<h3>Available from sellers:</h3>
-<ul>
-  {% for item in product.inventory %}
-    <li>
-      {{ item.seller_name }} - ${{ item.unit_price }} ({{ item.quantity }} in stock)
-      <form action="{{ url_for('cart.add_to_cart') }}" method="POST" style="display:inline;">
-        <input type="hidden" name="product_id" value="{{ product.id }}">
-        <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-        <input type="number" name="quantity" min="1" max="{{ item.quantity }}" value="1" required>
-        <button type="submit">Add to Cart</button>
-      </form>
-    </li>
-  {% endfor %}
-</ul>
+    </div>
+</div>
 {% endblock %}

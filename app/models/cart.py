@@ -1,4 +1,3 @@
-# models/cart.py
 from flask import current_app as app
 from datetime import datetime
 
@@ -25,15 +24,29 @@ class Cart:
 
             cart_id = cart_rows[0][0]
 
+            # Get the current price from inventory
+            price_rows = app.db.execute('''
+            SELECT unit_price FROM Inventory
+            WHERE product_id = :product_id AND seller_id = :seller_id
+            ''', product_id=product_id, seller_id=seller_id)
+
+            if not price_rows:
+                return None
+
+            unit_price = price_rows[0][0]
+
+            # Add to cart or update quantity
             result = app.db.execute('''
-            INSERT INTO Cart_Products (cart_id, product_id, seller_id, quantity, added_at)
-            VALUES (:cart_id, :product_id, :seller_id, :quantity, :added_at)
+            INSERT INTO Cart_Products (cart_id, product_id, seller_id, quantity, price_at_addition, added_at)
+            VALUES (:cart_id, :product_id, :seller_id, :quantity, :price, :added_at)
             ON CONFLICT (cart_id, product_id, seller_id)
-            DO UPDATE SET quantity = Cart_Products.quantity + :quantity
+            DO UPDATE SET quantity = Cart_Products.quantity + :quantity,
+                          price_at_addition = :price,
+                          added_at = :added_at
             RETURNING cart_id
             ''', cart_id=cart_id, product_id=product_id,
                                     seller_id=seller_id, quantity=quantity,
-                                    added_at=datetime.utcnow())
+                                    price=unit_price, added_at=datetime.utcnow())
 
             return result[0][0] if result else None
         except Exception as e:
@@ -51,12 +64,13 @@ class Cart:
                 p.product_name, 
                 p.description, 
                 p.image,
-                i.unit_price,
-                (cp.quantity * i.unit_price) as total_price
+                cp.price_at_addition as unit_price,
+                (cp.quantity * cp.price_at_addition) as total_price,
+                CONCAT(a.first_name, ' ', a.last_name) as seller_name
             FROM Cart_Products cp
             JOIN Carts c ON cp.cart_id = c.cart_id
             JOIN Products p ON cp.product_id = p.product_id
-            JOIN Inventory i ON cp.product_id = i.product_id AND cp.seller_id = i.seller_id
+            JOIN Accounts a ON cp.seller_id = a.user_id
             WHERE c.user_id = :user_id
             ''', user_id=user_id)
             return result

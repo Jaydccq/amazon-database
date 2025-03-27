@@ -1,5 +1,4 @@
 # app/models/user.py
-
 from flask_login import UserMixin
 from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(UserMixin):
     def __init__(self, user_id, email, first_name, last_name, address, current_balance, is_seller):
-        self.id = user_id  # Flask-Login 需要的属性
+        self.id = user_id
         self.user_id = user_id
         self.email = email
         self.first_name = first_name

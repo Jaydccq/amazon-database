@@ -54,3 +54,55 @@ Social Guru (Hongxi Chen): responsible for Feedback / Messaging
 
 GitLab Repository:
 https://gitlab.oit.duke.edu/Cindy_Gao/gingerbread-standard-project
+
+1. User Authentication & Profile
+Routes in users.py:
+
+/login (GET/POST): User login form and processing
+/register (GET/POST): User registration form and processing
+/logout (GET): Log out the current user
+/profile (GET): Display user profile
+/topup (GET/POST): Add balance to user account
+
+2. Product Management
+Routes in product.py:
+
+/products/<product_id> (GET): Display product details
+/products/api/<product_id> (GET): JSON API endpoint for product data
+
+3. Cart Management
+Routes in cart.py:
+
+/cart/ (GET): View cart contents
+/cart/add (POST): Add a product to cart
+/cart/remove (POST): Remove a product from cart
+/cart/update (POST): Update product quantity in cart
+
+4. Seller Management
+Routes in seller.py:
+
+/seller/dashboard (GET): Seller overview dashboard
+/seller/inventory (GET): View seller's inventory
+/seller/inventory/add (GET/POST): Add new product to inventory
+/seller/inventory/edit/<inventory_id> (GET/POST): Edit inventory item
+/seller/inventory/delete/<inventory_id> (POST): Remove product from inventory
+/seller/orders (GET): View all orders to be fulfilled
+/seller/orders/<order_id> (GET): View details of a specific order
+/seller/orders/fulfill/<order_item_id> (POST): Mark an order item as fulfilled
+
+5. Review System
+Routes in reviews.py:
+
+/user-reviews (GET): View all reviews by current user
+/api/reviews/recent/<user_id> (GET): Get recent reviews for a user
+/reviews/<user_id> (GET): View public reviews for a user
+/reviews/add (GET/POST): Add a new review
+/reviews/edit/<review_id> (GET/POST): Edit an existing review
+/api/reviews/delete/<review_id> (DELETE): Delete a review
+/reviews/product/<product_id> (GET): View reviews for a product
+/reviews/seller/<seller_id> (GET): View reviews for a seller
+
+6. Main / Index
+Routes in index.py:
+
+/ (GET): Main landing page showing products and purchase history
