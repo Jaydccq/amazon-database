@@ -44,3 +44,9 @@ class DB:
                 return result.fetchall()
             else:
                 return result.rowcount
+
+db = None
+
+def init_app(app):
+    global db
+    db = DB(app)

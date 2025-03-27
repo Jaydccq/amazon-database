@@ -227,6 +227,7 @@ class Product:
             SELECT
                 p.product_id,
                 p.product_name,
+                p.category_id,
                 MIN(i.unit_price) AS price
             FROM Products p
             JOIN Inventory i ON p.product_id = i.product_id
@@ -234,40 +235,42 @@ class Product:
         conditions = []
         params = {}
 
-        # 加入分类筛选
+        # 防止传入字符串类型的 k
+        if isinstance(k, str) and k.isdigit():
+            k = int(k)
+
         if category_id is not None:
             conditions.append("p.category_id = :category_id")
             params["category_id"] = category_id
 
-        # 拼接 WHERE 条件
         if conditions:
             base_query += " WHERE " + " AND ".join(conditions)
 
-        # 分组：对 product 聚合价格
-        base_query += " GROUP BY p.product_id, p.product_name"
+        base_query += " GROUP BY p.product_id, p.product_name, p.category_id"
 
-        # 排序 + LIMIT：无论有没有 category，只要有 k，就按价格排
-        base_query += " ORDER BY price DESC"
-
+        # 🟡 加一个换行和空格避免拼接错误
         if k is not None:
-            base_query += " LIMIT :k"
+            base_query += " ORDER BY price DESC LIMIT :k"
             params["k"] = k
+        else:
+            base_query += " ORDER BY p.product_id"
 
-        # 执行查询
+        print("[DEBUG] k =", k)
+        print("[DEBUG] SQL:\n", base_query)
+        print("[DEBUG] Params:", params)
+
         rows = app.db.execute(base_query, **params)
 
-        # 组装结果
         products = []
         for row in rows:
             products.append({
                 'id': row[0],
                 'name': row[1],
-                'price': row[2]
+                'category_id': row[2],
+                'price': row[3]
             })
 
         return products
-
-
 
 
     @staticmethod

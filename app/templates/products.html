@@ -1,19 +1,45 @@
-<table>
+<h1>Products for sale:</h1>
+
+<form method="get" action="{{ url_for('product.product_list') }}">
+  <div>
+    <label for="k">Sort By</label>
+    <input type="number" id="k" name="k" placeholder="Top K (optional)" value="{{ request.args.get('k', '') }}">
+  </div>
+
+  <div>
+    <label for="category">Category</label>
+    <select name="category_id" id="category">
+      <option value="">All Categories</option>
+      {% for c in categories %}
+        <option value="{{ c.id }}" {% if request.args.get('category_id') == c.id|string %}selected{% endif %}>
+          {{ c.name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <button type="submit">Apply</button>
+</form>
+
+{% if products %}
+  <table>
     <thead>
       <tr>
         <th>Product ID</th>
         <th>Product Name</th>
-        <th>Price</th>  <!-- 🟡 价格列 -->
+        <th>Price</th>
       </tr>
     </thead>
     <tbody>
       {% for product in products %}
       <tr>
         <td>{{ product.id }}</td>
-        <td><a href="{{ url_for('products.detail', product_id=product.id) }}">{{ product.name }}</a></td>
         <td>
-          {% if product.unit_price %}
-            ${{ product.unit_price }}
+          <a href="{{ url_for('product.product_detail', product_id=product.id) }}">{{ product.name }}</a>
+        </td>
+        <td>
+          {% if product.price %}
+            ${{ '%.2f'|format(product.price) }}
           {% else %}
             N/A
           {% endif %}
@@ -22,4 +48,6 @@
       {% endfor %}
     </tbody>
   </table>
-  
+{% else %}
+  <p style="margin-top: 1rem; color: #888;">No products found matching the criteria.</p>
+{% endif %}
