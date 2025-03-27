@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reviews.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Seller Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="user-avatar mx-auto mb-3" style="width: 70px; height: 70px; font-size: 1.5rem;">
+                            {{ seller.first_name[0] }}{{ seller.last_name[0] }}
+                        </div>
+                        <h4>{{ seller.first_name }} {{ seller.last_name }}</h4>
+                        <p class="text-muted">Seller since {{ seller.created_at.strftime('%b %Y') if seller.created_at else 'N/A' }}</p>
+                    </div>
+                    
+                    <div class="rating-summary p-3 bg-light rounded">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="h2 mb-0 mr-2">{{ "%.1f"|format(avg_rating) }}</div>
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                    {% if i <= avg_rating %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif i - 0.5 <= avg_rating %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="mb-0">{{ review_count }} review{% if review_count != 1 %}s{% endif %}</p>
+                    </div>
+                    
+                    <hr>
+                    
+                    {% if current_user.is_authenticated and current_user.id != seller.id %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('reviews.add_review', seller_id=seller.id) }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-star"></i> Write a Review
+                            </a>
+                            <a href="#" class="btn btn-outline-primary btn-block mt-2">
+                                <i class="fas fa-envelope"></i> Contact Seller
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Reviews ({{ review_count }})</h4>
+                    <div class="d-flex">
+                        <form method="get" class="d-flex align-items-center">
+                            <div class="form-group mr-2 mb-0">
+                                <select name="sort_by" id="sort_by" class="form-control form-control-sm" onchange="this.form.submit()">
+                                    <option value="date" {% if current_sort == 'date' %}selected{% endif %}>Latest</option>
+                                    <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest rated</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <select name="rating" id="rating" class="form-control form-control-sm" onchange="this.form.submit()">
+                                    <option value="">All stars</option>
+                                    {% for i in range(5, 0, -1) %}
+                                    <option value="{{ i }}" {% if current_rating == i %}selected{% endif %}>{{ i }} stars</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                            <div class="review-card mb-4">
+                                <div class="review-header">
+                                    <div class="review-author">
+                                        <div class="user-avatar">
+                                            {{ review.username[0] if review.username else '?' }}
+                                        </div>
+                                        <div>{{ review.username }}</div>
+                                    </div>
+                                    <div class="stars">
+                                        {% for i in range(review.rating) %}
+                                            <i class="fas fa-star"></i>
+                                        {% endfor %}
+                                        {% for i in range(5 - review.rating) %}
+                                            <i class="far fa-star stars-empty"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="review-body">
+                                    <p class="review-text">{{ review.comment }}</p>
+                                    <div class="mt-2 text-muted">
+                                        <small>Posted: {{ review.review_date.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                            <h5>No reviews yet</h5>
+                            <p class="text-muted">Be the first to review this seller!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#sort_by, #rating').change(function() {
+            $(this).closest('form').submit();
+        });
+    });
+</script>
+{% endblock %}

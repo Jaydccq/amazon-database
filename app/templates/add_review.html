@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reviews.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h2 class="mb-0">
+                        {% if product %}
+                            Write a Review for Product
+                        {% elif seller %}
+                            Write a Review for Seller
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    {% if product %}
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="mr-3">
+                                {% if product.image %}
+                                    <img src="{{ product.image }}" alt="{{ product.name }}" class="img-thumbnail" style="max-width: 80px;">
+                                {% else %}
+                                    <div class="bg-light text-center p-3" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-box fa-2x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h5 class="mb-1">{{ product.name }}</h5>
+                                <p class="text-muted mb-0">{{ product.category_name }}</p>
+                            </div>
+                        </div>
+                    {% elif seller %}
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="user-avatar mr-3">
+                                {{ seller.first_name[0] }}{{ seller.last_name[0] }}
+                            </div>
+                            <div>
+                                <h5 class="mb-1">{{ seller.first_name }} {{ seller.last_name }}</h5>
+                                <p class="text-muted mb-0">Seller</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for('reviews.add_review') }}">
+                        {% if product %}
+                            <input type="hidden" name="review_type" value="product">
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                        {% elif seller %}
+                            <input type="hidden" name="review_type" value="seller">
+                            <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label for="rating" class="font-weight-bold">Your Rating:</label>
+                            <select class="form-control w-25" id="rating" name="rating">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5" selected>5</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="comment" class="font-weight-bold">Your Review:</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="5" required
+                                      placeholder="Share your experience!"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            {% if product %}
+                                <a href="{{ url_for('product.product_detail', product_id=product.id) }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            {% elif seller %}
+                                <a href="{{ url_for('reviews.seller_reviews', seller_id=seller.id) }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('index.index') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Review
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

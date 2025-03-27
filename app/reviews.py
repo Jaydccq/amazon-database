@@ -12,7 +12,6 @@ bp = Blueprint('reviews', __name__)
 @bp.route('/user-reviews')
 @login_required
 def user_reviews_page():
-    # Get sort parameters
     sort_by = request.args.get('sort_by', 'date')
     sort_order = request.args.get('sort_order', 'desc')
 
@@ -30,6 +29,7 @@ def user_reviews_page():
     else:
         reviews = sorted(reviews, key=lambda r: r.review_date,
                          reverse=(sort_order == 'desc'))
+
 
     return render_template('reviews.html',
                            reviews=reviews,
@@ -89,7 +89,7 @@ def add_review():
             flash(f'Error: {str(e)}')
 
         if product_id:
-            return redirect(url_for('products.product_detail', product_id=product_id))
+            return redirect(url_for('product.product_detail', product_id=product_id))
         elif seller_id:
             return redirect(url_for('user_reviews', user_id=seller_id))
 
@@ -172,11 +172,17 @@ def product_reviews(product_id):
 
     avg_rating, review_count = Review.get_avg_rating_product(product_id)
 
+    rating_distribution = {star: 0 for star in range(1, 6)}
+    for r in reviews:
+        if r.rating in rating_distribution:
+            rating_distribution[r.rating] += 1
+
     return render_template('product_reviews.html',
                            product=product,
                            reviews=reviews,
                            avg_rating=avg_rating,
                            review_count=review_count,
+                           rating_distribution=rating_distribution,
                            current_sort=sort_by,
                            current_order=sort_order)
 
@@ -200,11 +206,16 @@ def seller_reviews(seller_id):
                          reverse=(sort_order == 'desc'))
 
     avg_rating, review_count = Review.get_avg_rating_seller(seller_id)
+    rating_distribution = {star: 0 for star in range(1, 6)}
+    for r in reviews:
+        if r.rating in rating_distribution:
+            rating_distribution[r.rating] += 1
 
     return render_template('seller_reviews.html',
                            seller=seller,
                            reviews=reviews,
                            avg_rating=avg_rating,
                            review_count=review_count,
+                           rating_distribution=rating_distribution,
                            current_sort=sort_by,
                            current_order=sort_order)
