@@ -565,3 +565,29 @@ class Product:
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
             'inventory': inventory_items
         }
+
+    @staticmethod
+    def get_top_k_expensive(k):
+        rows = app.db.execute('''
+        SELECT p.product_id, p.category_id, p.product_name, p.description, 
+               p.image, p.owner_id, p.created_at, p.updated_at, 
+               c.category_name, CONCAT(a.first_name, ' ', a.last_name) AS owner_name,
+               COALESCE(AVG(r.rating), 0) as avg_rating,
+               COUNT(r.review_id) as review_count,
+               MAX(i.unit_price) as max_price
+        FROM Products p
+        JOIN Products_Categories c ON p.category_id = c.category_id
+        JOIN Accounts a ON p.owner_id = a.user_id
+        LEFT JOIN Reviews_Feedbacks r ON p.product_id = r.product_id
+        JOIN Inventory i ON p.product_id = i.product_id
+        WHERE i.unit_price > 0
+        GROUP BY p.product_id, c.category_name, a.first_name, a.last_name
+        ORDER BY max_price DESC
+        LIMIT :k
+        ''', k=k)
+
+        products = [Product(*row[:-1]) for row in rows]
+        for i, product in enumerate(products):
+            product.price = rows[i][-1]
+
+        return products

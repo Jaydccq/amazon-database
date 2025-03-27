@@ -1,17 +1,29 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
     <div class="container">
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col-md-8">
                 <h2>Products for sale:</h2>
+                <div class="btn-group mb-3">
+                    <a href="{{ url_for('index.index', sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if not filter_type %}active{% endif %}">
+                        All Products
+                    </a>
+                    <a href="{{ url_for('index.index', filter='expensive', top_k=5, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 5 %}active{% endif %}">
+                        Top 5 Most Expensive
+                    </a>
+                    <a href="{{ url_for('index.index', filter='expensive', top_k=10, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 10 %}active{% endif %}">
+                        Top 10 Most Expensive
+                    </a>
+                </div>
             </div>
             <div class="col-md-4">
                 <form action="{{ url_for('index.index') }}" method="GET" class="form-inline">
                     <div class="input-group w-100">
                         <input type="text" name="search" class="form-control" placeholder="Search products..."
                                value="{{ search_query|default('') }}">
+                        <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                        <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-search"></i>
@@ -22,6 +34,26 @@
             </div>
         </div>
 
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex align-items-center">
+                    <span class="me-2">Sort by:</span>
+                    <div class="btn-group me-3">
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='name', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'name' %}active{% endif %}">Name</a>
+{#                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='price', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'price' %}active{% endif %}">Price</a>#}
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='rating', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'rating' %}active{% endif %}">Rating</a>
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='newest', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'newest' %}active{% endif %}">Newest</a>
+                    </div>
+
+                    <span class="me-2">Order:</span>
+                    <div class="btn-group">
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by=sort_by, sort_dir='asc') }}" class="btn btn-sm btn-outline-secondary {% if sort_dir == 'asc' %}active{% endif %}">Ascending</a>
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by=sort_by, sort_dir='desc') }}" class="btn btn-sm btn-outline-secondary {% if sort_dir == 'desc' %}active{% endif %}">Descending</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             {% for product in avail_products %}
                 <div class="col-md-4 mb-4">
@@ -29,19 +61,10 @@
                         <div class="card-header">
                             <h5 class="card-title mb-0">{{ product.name }}</h5>
                         </div>
-                        {# 图片部分 当产品有图片URL时，显示实际图片
-                {% if product.image %}
-                <img src="{{ product.image }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: contain;">
-                {% else %}
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                    <i class="fas fa-image fa-3x text-muted"></i>
-                </div>
-                {% endif %}
-                #}
                         <div class="card-body">
                             <p class="card-text">{{ product.description|truncate(100) }}</p>
                             <div class="d-flex justify-content-between align-items-center">
-                                <strong class="text-primary">${{ "%.2f"|format(product.price) }}</strong>
+                                <strong class="text-primary">${{ "%.2f"|format(product.price|default(0.00)) }}</strong>
                                 <div>
                                     <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
                                        class="btn btn-sm btn-outline-primary">View Details</a>
@@ -96,8 +119,5 @@
         {% else %}
             <p><a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history!</p>
         {% endif %}
-
-
     </div>
-
 {% endblock %}
