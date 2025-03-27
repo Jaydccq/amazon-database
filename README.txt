@@ -4,9 +4,10 @@ The Gingerbread Standard Project is a web-based e-commerce platform designed to 
 
 This project is being developed collaboratively by a team of five, each specializing in a different aspect of the system.
 
+Milestone 3 demo video:
 
 Team Roles & Responsibilities:
-Users Guru (Jiaxin Gao): responsible for Account / Purchases
+Users Guru (Hongyi Duan): responsible for Account / Purchases
 1. Designed the Account table and implemented the following features:
     i. User Registration & Authentication: Users can register, log in, log out, and reset their passwords.
     ii. User Profile Management: Allows users to edit their profile details (email, name, address, password).
@@ -15,7 +16,7 @@ Users Guru (Jiaxin Gao): responsible for Account / Purchases
 3. Designed the Entity-Relationship Diagram (ERD) that integrates all database tables.
 4. Set up and managed the project GitLab repository.
 
-Products Guru (Hongyi Duan): responsible for Products
+Products Guru (Jiaxin Gao): responsible for Products
 1. Designed the Products table, identifying ProductID as the primary key.
 2. Created the preliminary website page-by-page design with Yizhe Chen.
 3. Developed functionalities for:
