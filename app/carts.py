@@ -5,6 +5,16 @@ from app.models.inventory import Inventory
 
 bp = Blueprint("cart", __name__, url_prefix="/cart")
 
+@bp.route('/cart/checkout', methods=['POST'])
+@login_required
+def checkout():
+    from app.models.cart import Cart
+    success = Cart.checkout_cart(current_user.id)
+    if success:
+        flash("Checkout successful!")
+    else:
+        flash("Checkout failed. Please try again.")
+    return redirect(url_for('index.index'))
 
 @bp.route("/", methods=["GET"])
 @login_required

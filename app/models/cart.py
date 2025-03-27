@@ -77,3 +77,56 @@ class Cart:
         except Exception as e:
             print(f"Error retrieving cart items: {e}")
             return []
+    
+    @staticmethod
+    def checkout_cart(user_id):
+        try:
+            cart_rows = app.db.execute('''
+                SELECT cart_id FROM Carts WHERE user_id = :user_id
+            ''', {'user_id': user_id})
+
+            if not cart_rows:
+                return False
+
+            cart_id = cart_rows[0][0]
+
+            cart_items = app.db.execute('''
+            SELECT cp.product_id, cp.seller_id, cp.quantity, i.unit_price
+            FROM Cart_Products cp
+            JOIN Inventory i ON cp.product_id = i.product_id AND cp.seller_id = i.seller_id
+            WHERE cp.cart_id = :cart_id
+        ''', cart_id=cart_id)
+
+            if not cart_items:
+                return False
+
+            order_rows = app.db.execute('''
+            INSERT INTO Orders (buyer_id, order_date)
+            VALUES (:user_id, CURRENT_TIMESTAMP)
+            RETURNING order_id
+            ''', user_id=user_id)
+            order_id = order_rows[0][0]
+
+            for item in cart_items:
+                app.db.execute('''
+                INSERT INTO Orders_Products (order_id, product_id, seller_id, quantity, price_at_purchase)
+                VALUES (:order_id, :product_id, :seller_id, :quantity, :price)
+                ''', order_id=order_id,
+                    product_id=item[0],
+                    seller_id=item[1],
+                    quantity=item[2],
+                    price=item[3])
+
+            app.db.execute('''
+            DELETE FROM Cart_Products
+            WHERE cart_id = :cart_id
+            ''', cart_id=cart_id)
+
+            return True
+        
+        except Exception as e:
+            import traceback
+            print("======== CHECKOUT ERROR ========")
+            traceback.print_exc()
+            return False
+
