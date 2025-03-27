@@ -12,6 +12,7 @@ bp = Blueprint('users', __name__)
 
 # psql -h localhost -p 15432 -U miniamazon -d miniamazon
 #ssh -L 15432:localhost:5432 zs181@vcm-45418.vm.duke.edu
+# icecream@tastes.good  test123
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])

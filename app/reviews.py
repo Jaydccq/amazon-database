@@ -8,9 +8,35 @@ from .models.product import Product
 
 bp = Blueprint('reviews', __name__)
 
+
 @bp.route('/user-reviews')
+@login_required
 def user_reviews_page():
-    return render_template('reviews.html')
+    # Get sort parameters
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    rating_filter = request.args.get('rating', type=int)
+
+    reviews = Review.get_all_by_user(current_user.id)
+
+    # Apply filtering
+    if rating_filter:
+        reviews = [r for r in reviews if r.rating == rating_filter]
+
+    if sort_by == 'rating':
+        reviews = sorted(reviews, key=lambda r: r.rating,
+                         reverse=(sort_order == 'desc'))
+    else:
+        reviews = sorted(reviews, key=lambda r: r.review_date,
+                         reverse=(sort_order == 'desc'))
+
+    return render_template('reviews.html',
+                           reviews=reviews,
+                           current_sort=sort_by,
+                           current_order=sort_order,
+                           current_rating=rating_filter)
+
 
 @bp.route('/api/reviews/recent/<int:user_id>', methods=['GET'])
 def get_recent_reviews(user_id):
@@ -26,22 +52,21 @@ def get_recent_reviews(user_id):
         'rating': review.rating
     } for review in reviews])
 
-# showing user reviews on the profile page
+
 @bp.route('/reviews/<int:user_id>')
 def user_reviews(user_id):
-
     user = User.get(user_id)
     if not user:
         flash('User not found!')
         return redirect(url_for('index.index'))
-    
-    reviews = Review.get_recent5_by_user(user_id, 5)
-    
-    return render_template('reviews.html', 
-                          reviews=reviews,
-                          user=user)
 
-# creating a new review
+    reviews = Review.get_recent5_by_user(user_id, 5)
+
+    return render_template('user_public_reviews.html',
+                           reviews=reviews,
+                           user=user)
+
+
 @bp.route('/reviews/add', methods=['GET', 'POST'])
 @login_required
 def add_review():
@@ -49,56 +74,53 @@ def add_review():
         comment = request.form.get('comment')
         rating = int(request.form.get('rating'))
         review_type = request.form.get('review_type')
-        
+
         if review_type == 'product':
             product_id = int(request.form.get('product_id'))
             seller_id = None
         else:
             product_id = None
             seller_id = int(request.form.get('seller_id'))
-        
-        
-        Review.create(current_user.user_id, comment, product_id, seller_id, rating)
-        flash('Review added successfully!')
 
-        # redirect to product review or seller profile 
+        try:
+            Review.create(current_user.id, comment, product_id, seller_id, rating)
+            flash('Review added successfully!')
+        except ValueError as e:
+            flash(f'Error: {str(e)}')
+
         if product_id:
-            return redirect(url_for('products.product_detail', id=product_id))
+            return redirect(url_for('products.product_detail', product_id=product_id))
         elif seller_id:
-            return redirect(url_for('users.seller_profile', user_id=seller_id))
-    
-    # GET request to show the form
+            return redirect(url_for('user_reviews', user_id=seller_id))
+
     product_id = request.args.get('product_id', type=int)
     seller_id = request.args.get('seller_id', type=int)
-    
+
     product = None
     seller = None
-    
+
     if product_id:
         product = Product.get(product_id)
     elif seller_id:
         seller = User.get(seller_id)
-    
-    return render_template('add_review.html',
-                          product=product,
-                          seller=seller)
 
-# editing a review
+    return render_template('add_review.html',
+                           product=product,
+                           seller=seller)
+
+
 @bp.route('/reviews/edit/<int:review_id>', methods=['GET', 'POST'])
 @login_required
 def edit_review(review_id):
-    # get the review by ID
     review = Review.get(review_id)
-    if not review: # if the review does not exist, redirect to the index page
+    if not review:
         flash('Review not found!')
-        return redirect(url_for('index.index'))
-    
-    # check if the current user is the owner of the review
-    if review.user_id != current_user.user_id:
+        return redirect(url_for('reviews.user_reviews_page'))
+
+    if review.user_id != current_user.id:
         flash('You can only edit your own reviews!')
-        return redirect(url_for('index.index'))
-    
-    # POST request to update the review
+        return redirect(url_for('reviews.user_reviews_page'))
+
     if request.method == 'POST':
         comment = request.form.get('comment')
         rating = int(request.form.get('rating'))
@@ -107,58 +129,82 @@ def edit_review(review_id):
             flash('Review updated successfully!')
         except ValueError as e:
             flash(f'Error: {str(e)}')
-        # redirect to the user's reviews page
-        return redirect(url_for('reviews.user_reviews', user_id=current_user.user_id))
-    
-    # GET request to show the edit form
+
+        return redirect(url_for('reviews.user_reviews_page'))
+
     return render_template('edit_review.html', review=review)
 
-# deleting a review
+
 @bp.route('/api/reviews/delete/<int:review_id>', methods=['DELETE'])
 @login_required
 def delete_review(review_id):
     review = Review.get(review_id)
     if not review:
-        return jsonify({'success': False, 
+        return jsonify({'success': False,
                         'error': 'Review not found'}), 404
-    # check if the current user is the owner of the review
-    if review.user_id != current_user.user_id:
-        return jsonify({'success': False, 
+
+    if review.user_id != current_user.id:
+        return jsonify({'success': False,
                         'error': 'Unauthorized'}), 403
-    
+
     success = Review.delete(review_id)
     return jsonify({'success': success})
 
-# showing all reviews for a product
+
 @bp.route('/reviews/product/<int:product_id>')
 def product_reviews(product_id):
     product = Product.get(product_id)
     if not product:
         flash('Product not found!')
         return redirect(url_for('index.index'))
-    
-    reviews = Review.get_product_review(product_id)
-    avg_rating, review_count = Review.get_avg_rating_product(product_id)
-    
-    return render_template('product_reviews.html',
-                          product=product,
-                          reviews=reviews,
-                          avg_rating=avg_rating,
-                          review_count=review_count)
 
-# showing all reviews for a seller
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    reviews = Review.get_product_review(product_id)
+
+    if sort_by == 'rating':
+        reviews = sorted(reviews, key=lambda r: r.rating,
+                         reverse=(sort_order == 'desc'))
+    else:
+        reviews = sorted(reviews, key=lambda r: r.review_date,
+                         reverse=(sort_order == 'desc'))
+
+    avg_rating, review_count = Review.get_avg_rating_product(product_id)
+
+    return render_template('product_reviews.html',
+                           product=product,
+                           reviews=reviews,
+                           avg_rating=avg_rating,
+                           review_count=review_count,
+                           current_sort=sort_by,
+                           current_order=sort_order)
+
+
 @bp.route('/reviews/seller/<int:seller_id>')
 def seller_reviews(seller_id):
     seller = User.get(seller_id)
     if not seller or not seller.is_seller:
         flash('Seller not found!')
         return redirect(url_for('index.index'))
-    
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+
     reviews = Review.get_seller_review(seller_id)
+
+    if sort_by == 'rating':
+        reviews = sorted(reviews, key=lambda r: r.rating,
+                         reverse=(sort_order == 'desc'))
+    else:  # date
+        reviews = sorted(reviews, key=lambda r: r.review_date,
+                         reverse=(sort_order == 'desc'))
+
     avg_rating, review_count = Review.get_avg_rating_seller(seller_id)
-    
+
     return render_template('seller_reviews.html',
-                          seller=seller,
-                          reviews=reviews,
-                          avg_rating=avg_rating,
-                          review_count=review_count)
+                           seller=seller,
+                           reviews=reviews,
+                           avg_rating=avg_rating,
+                           review_count=review_count,
+                           current_sort=sort_by,
+                           current_order=sort_order)

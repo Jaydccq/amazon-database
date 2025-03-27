@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Review</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="comment">Review Comment:</label>
+                    <textarea class="form-control" id="comment" name="comment" rows="5" required>{{ review.comment }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="rating">Rating:</label>
+                    <select class="form-control" id="rating" name="rating" required>
+                        {% for i in range(1, 6) %}
+                        <option value="{{ i }}" {% if review.rating == i %}selected{% endif %}>{{ i }} stars</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Update Review</button>
+                <a href="{{ url_for('reviews.user_reviews_page') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
