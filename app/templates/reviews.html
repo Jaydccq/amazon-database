@@ -11,7 +11,7 @@
                 <i class="fas fa-list"></i> Show All Reviews
             </a>
         {% else %}
-            <a href="{{ url_for('reviews.user_reviews_page', recent=true) }}" class="btn btn-primary">
+            <a href="{{ url_for('reviews.user_reviews_page', recent=1) }}" class="btn btn-primary">
                 <i class="fas fa-clock"></i> Show 5 Most Recent
             </a>
         {% endif %}
