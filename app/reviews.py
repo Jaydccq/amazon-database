@@ -17,7 +17,12 @@ def user_reviews_page():
 
     rating_filter = request.args.get('rating', type=int)
 
-    reviews = Review.get_all_by_user(current_user.id)
+    recent = request.args.get('recent', type=int)
+
+    if recent == 1:
+        reviews = Review.get_recent5_by_user(current_user.id)
+    else:
+        reviews = Review.get_all_by_user(current_user.id)
 
     # Apply filtering
     if rating_filter:
@@ -32,10 +37,12 @@ def user_reviews_page():
 
 
     return render_template('reviews.html',
-                           reviews=reviews,
-                           current_sort=sort_by,
-                           current_order=sort_order,
-                           current_rating=rating_filter)
+                       reviews=reviews,
+                       current_sort=sort_by,
+                       current_order=sort_order,
+                       current_rating=rating_filter,
+                       show_recent=(recent == 1))
+
 
 
 @bp.route('/api/reviews/recent/<int:user_id>', methods=['GET'])
