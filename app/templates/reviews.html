@@ -62,7 +62,7 @@
                     <p class="card-text">{{ review.comment }}</p>
 
                     {% if review.product_id %}
-                    <a href="{{ url_for('products.product_detail', product_id=review.product_id) }}" class="btn btn-sm btn-info">View Product</a>
+                    <a href="{{ url_for('product.product_detail', product_id=review.product_id) }}" class="btn btn-sm btn-info">View Product</a>
                     {% endif %}
 
                     {% if review.seller_id %}
