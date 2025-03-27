@@ -9,18 +9,43 @@
                     <a href="{{ url_for('index.index', sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if not filter_type %}active{% endif %}">
                         All Products
                     </a>
-                    <a href="{{ url_for('index.index', filter='expensive', top_k=5, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 5 %}active{% endif %}">
-                        Top 5 Most Expensive
-                    </a>
-                    <a href="{{ url_for('index.index', filter='expensive', top_k=10, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 10 %}active{% endif %}">
-                        Top 10 Most Expensive
-                    </a>
+{#                    <a href="{{ url_for('index.index', filter='expensive', top_k=5, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 5 %}active{% endif %}">#}
+{#                        Top 5 Most Expensive#}
+{#                    </a>#}
+{#                    <a href="{{ url_for('index.index', filter='expensive', top_k=10, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 10 %}active{% endif %}">#}
+{#                        Top 10 Most Expensive#}
+{#                    </a>#}
                 </div>
             </div>
+
+            {% if filter_type == 'expensive' %}
+                <div class="mb-2">
+                    Showing: Top {{ top_k }} expensive products
+                </div>
+            {% endif %}
             <div class="col-md-4">
                 <form action="{{ url_for('index.index') }}" method="GET" class="form-inline">
                     <div class="input-group w-100">
-                        <input type="text" name="search" class="form-control" placeholder="Search products..."
+                        <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                        <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
+                        <input type="hidden" name="filter" value="expensive">
+                        <input type="number" name="top_k" min="1" class="form-control"
+                               placeholder="Enter a positive interger to see top expensive items..."
+                               aria-label="Top K value"
+                               value="{% if filter_type == 'expensive' %}{{ top_k }}{% endif %}">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-md-4">
+                <form action="{{ url_for('index.index') }}" method="GET" class="form-inline">
+                    <div class="input-group w-100">
+                        <input type="text" name="search" class="form-control" placeholder="Search product by name..."
                                value="{{ search_query|default('') }}">
                         <input type="hidden" name="sort_by" value="{{ sort_by }}">
                         <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
@@ -31,7 +56,6 @@
                         </div>
                     </div>
                 </form>
-            </div>
         </div>
 
         <div class="row mb-3">

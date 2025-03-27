@@ -20,6 +20,9 @@ def index():
     sort_by = request.args.get('sort_by', 'name')  # Default sorting by name
     sort_dir = request.args.get('sort_dir', 'asc')  # Default ascending order
 
+    if top_k < 1:
+        top_k = 5
+
     if filter_type == 'expensive':
         products = Product.get_top_k_expensive(top_k)
     else:
