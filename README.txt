@@ -4,7 +4,7 @@ The Gingerbread Standard Project is a web-based e-commerce platform designed to 
 
 This project is being developed collaboratively by a team of five, each specializing in a different aspect of the system.
 
-Milestone 3 demo video:
+Milestone 3 demo video: https://youtu.be/qhJ9kOa4Cz8
 
 Team Roles & Responsibilities:
 Users Guru (Hongyi Duan): responsible for Account / Purchases
