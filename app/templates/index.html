@@ -6,15 +6,16 @@
             <div class="col-md-8">
                 <h2>Products for sale:</h2>
                 <div class="btn-group mb-3">
-                    <a href="{{ url_for('index.index', sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if not filter_type %}active{% endif %}">
+                    <a href="{{ url_for('index.index', sort_by=sort_by, sort_dir=sort_dir) }}"
+                       class="btn btn-outline-primary {% if not filter_type %}active{% endif %}">
                         All Products
                     </a>
-{#                    <a href="{{ url_for('index.index', filter='expensive', top_k=5, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 5 %}active{% endif %}">#}
-{#                        Top 5 Most Expensive#}
-{#                    </a>#}
-{#                    <a href="{{ url_for('index.index', filter='expensive', top_k=10, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 10 %}active{% endif %}">#}
-{#                        Top 10 Most Expensive#}
-{#                    </a>#}
+                    {#                    <a href="{{ url_for('index.index', filter='expensive', top_k=5, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 5 %}active{% endif %}">#}
+                    {#                        Top 5 Most Expensive#}
+                    {#                    </a>#}
+                    {#                    <a href="{{ url_for('index.index', filter='expensive', top_k=10, sort_by=sort_by, sort_dir=sort_dir) }}" class="btn btn-outline-primary {% if filter_type == 'expensive' and top_k == 10 %}active{% endif %}">#}
+                    {#                        Top 10 Most Expensive#}
+                    {#                    </a>#}
                 </div>
             </div>
 
@@ -43,19 +44,19 @@
             </div>
         </div>
         <div class="col-md-4">
-                <form action="{{ url_for('index.index') }}" method="GET" class="form-inline">
-                    <div class="input-group w-100">
-                        <input type="text" name="search" class="form-control" placeholder="Search product by name..."
-                               value="{{ search_query|default('') }}">
-                        <input type="hidden" name="sort_by" value="{{ sort_by }}">
-                        <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
+            <form action="{{ url_for('index.index') }}" method="GET" class="form-inline">
+                <div class="input-group w-100">
+                    <input type="text" name="search" class="form-control" placeholder="Search product by name..."
+                           value="{{ search_query|default('') }}">
+                    <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                    <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
-                </form>
+                </div>
+            </form>
         </div>
 
         <div class="row mb-3">
@@ -63,16 +64,21 @@
                 <div class="d-flex align-items-center">
                     <span class="me-2">Sort by:</span>
                     <div class="btn-group me-3">
-                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='name', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'name' %}active{% endif %}">Name</a>
-{#                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='price', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'price' %}active{% endif %}">Price</a>#}
-                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='rating', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'rating' %}active{% endif %}">Rating</a>
-                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='newest', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'newest' %}active{% endif %}">Newest</a>
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='name', sort_dir=sort_dir) }}"
+                           class="btn btn-sm btn-outline-secondary {% if sort_by == 'name' %}active{% endif %}">Name</a>
+                        {#                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='price', sort_dir=sort_dir) }}" class="btn btn-sm btn-outline-secondary {% if sort_by == 'price' %}active{% endif %}">Price</a>#}
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='rating', sort_dir=sort_dir) }}"
+                           class="btn btn-sm btn-outline-secondary {% if sort_by == 'rating' %}active{% endif %}">Rating</a>
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by='newest', sort_dir=sort_dir) }}"
+                           class="btn btn-sm btn-outline-secondary {% if sort_by == 'newest' %}active{% endif %}">Newest</a>
                     </div>
 
                     <span class="me-2">Order:</span>
                     <div class="btn-group">
-                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by=sort_by, sort_dir='asc') }}" class="btn btn-sm btn-outline-secondary {% if sort_dir == 'asc' %}active{% endif %}">Ascending</a>
-                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by=sort_by, sort_dir='desc') }}" class="btn btn-sm btn-outline-secondary {% if sort_dir == 'desc' %}active{% endif %}">Descending</a>
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by=sort_by, sort_dir='asc') }}"
+                           class="btn btn-sm btn-outline-secondary {% if sort_dir == 'asc' %}active{% endif %}">Ascending</a>
+                        <a href="{{ url_for('index.index', search=search_query, filter=filter_type, top_k=top_k, sort_by=sort_by, sort_dir='desc') }}"
+                           class="btn btn-sm btn-outline-secondary {% if sort_dir == 'desc' %}active{% endif %}">Descending</a>
                     </div>
                 </div>
             </div>
@@ -123,21 +129,45 @@
             <table class='table table-hover table-bordered container'>
                 <thead class="thead-dark">
                 <tr>
-                    <th scope="col">Purchase ID</th>
-                    <th scope="col">Product Name</th>
-                    <th scope="col">Price</th>
+                    <th scope="col">Order ID</th>
+                    <th scope="col">Products</th>
+                    <th scope="col">Total Amount</th>
                     <th scope="col">Date</th>
+                    <th scope="col">Status</th>
                 </tr>
                 </thead>
                 <tbody>
-                {% for purchase in purchase_history %}
+                {% if purchase_history %}
+                    {% for order in purchase_history %}
+                        <tr>
+                            <th scope="row">{{ order.order_id }}</th>
+                            <td>
+                                {% if order.items %}
+                                    <ul class="list-unstyled">
+                                        {% for item in order.items %}
+                                            <li>{{ item.product_name }} (x{{ item.quantity }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                            <td>{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if order.order_status == 'Fulfilled' %}
+                                    <span class="badge bg-success">Fulfilled</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Unfulfilled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
                     <tr>
-                        <th scope="row">{{ purchase.id }}</th>
-                        <td>{{ purchase.pid }}</td>
-                        <td>${{ purchase.price|default('N/A') }}</td>
-                        <td>{{ purchase.time_purchased }}</td>
+                        <td colspan="5" class="text-center">No purchase history found</td>
                     </tr>
-                {% endfor %}
+                {% endif %}
                 </tbody>
             </table>
         {% else %}
