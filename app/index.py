@@ -1,6 +1,6 @@
 # index.py
 from flask import render_template, request
-from flask_login import current_user
+from flask_login import login_required, current_user
 import datetime
 
 from .models.orders import Order
@@ -9,7 +9,6 @@ from .models.product import Product
 from flask import Blueprint
 
 bp = Blueprint('index', __name__)
-
 
 @bp.route('/')
 def index():
@@ -64,3 +63,9 @@ def index():
                            top_k=top_k,
                            sort_by=sort_by,
                            sort_dir=sort_dir)
+
+@bp.route('/purchase-history')
+@login_required
+def purchase_history():
+    orders = Order.get_for_buyer(current_user.id, limit=100)
+    return render_template('purchase_history.html', orders=orders)
