@@ -19,7 +19,7 @@ def seller_required(f):
         if 'user_id' not in session:
             print(session)
             flash('Please log in to access this page.', 'error')
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('users.login'))
 
         if not session.get('is_seller'):
             flash('You must be registered as a seller to access this page.', 'error')
@@ -213,6 +213,87 @@ def add_inventory():
         categories=categories,
         search_query=search_query,
         current_category=current_category
+    )
+
+
+@bp.route('/product/create', methods=['GET', 'POST'])
+@seller_required
+def create_product():
+    """Create a new product"""
+    user_id = session['user_id']
+
+    if request.method == 'POST':
+        # Get form data
+        product_name = request.form.get('product_name')
+        category_id = request.form.get('category_id', type=int)
+        description = request.form.get('description')
+        quantity = request.form.get('quantity', type=int)
+        unit_price = request.form.get('unit_price', type=float)
+
+        # log the inputs for debugging
+        print(f"Product Name: {product_name}, Category ID: {category_id}, Description: {description}, Quantity: {quantity}, Unit Price: {unit_price}")
+        # Validate inputs
+        if (product_name is None or product_name == '' or
+                category_id is None or
+                description is None or description == '' or
+                quantity is None or
+                unit_price is None):
+            flash('All required fields must be filled out', 'error')
+            return redirect(url_for('seller.create_product'))
+
+        if quantity < 0:
+            flash('Quantity cannot be negative', 'error')
+            return redirect(url_for('seller.create_product'))
+
+        if unit_price <= 0:
+            flash('Price must be greater than zero', 'error')
+            return redirect(url_for('seller.create_product'))
+
+        # Handle image upload
+        image_url = None
+        if 'product_image' in request.files:
+            file = request.files['product_image']
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                # Generate unique filename
+                unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                # Save the file
+                upload_folder = current_app.config['UPLOAD_FOLDER']
+                file_path = os.path.join(upload_folder, unique_filename)
+                file.save(file_path)
+                # Store the relative URL
+                image_url = f"/static/uploads/{unique_filename}"
+
+        # Create the product
+        product = Product.create(
+            category_id=category_id,
+            product_name=product_name,
+            description=description,
+            image=image_url,
+            owner_id=user_id
+        )
+
+        if not product:
+            flash('Failed to create product', 'error')
+            return redirect(url_for('seller.create_product'))
+
+        # Add product to inventory
+        inventory_id = Inventory.create(user_id, product.id, quantity, unit_price)
+        print(f"Inventory ID: {inventory_id}")
+
+        if inventory_id is not None:
+            flash('Product created and added to inventory', 'success')
+            return redirect(url_for('seller.inventory'))
+        else:
+            flash('Product created but could not be added to inventory', 'warning')
+            return redirect(url_for('seller.add_inventory'))
+
+    # GET request - show the product creation form
+    categories = {cat.id: cat.name for cat in Category.get_all()}
+
+    return render_template(
+        'seller/create_product.html',
+        categories=categories
     )
 
 

@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block title %}Create New Product | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Create New Product</h1>
+        <p class="text-muted">Add a new product to the marketplace</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Add Products
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Product Information</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('seller.create_product') }}" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label">Product Name*</label>
+                        <input type="text" class="form-control" id="product_name" name="product_name" required>
+                        <div class="form-text">Enter a descriptive name for your product</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Category*</label>
+                        <select name="category_id" id="category_id" class="form-select" required>
+                            <option value="">Select a category</option>
+                            {% for category_id, category_name in categories.items() %}
+                                <option value="{{ category_id }}">{{ category_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose the most appropriate category for your product</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description*</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        <div class="form-text">Provide detailed information about your product</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="product_image" class="form-label">Product Image</label>
+                        <input type="file" class="form-control" id="product_image" name="product_image" accept="image/*">
+                        <div class="form-text">Upload an image of your product (optional)</div>
+                    </div>
+
+                    <div class="mb-3 mt-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Inventory Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Initial Quantity*</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity" min="0" value="1" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="unit_price" class="form-label">Unit Price ($)*</label>
+                                    <input type="number" class="form-control" id="unit_price" name="unit_price" min="0.01" step="0.01" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end mt-3">
+                <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Create Product
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

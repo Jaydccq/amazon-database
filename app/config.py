@@ -16,4 +16,6 @@ class Config(object):
         os.environ.get('DB_NAME', '')
     )
 
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False

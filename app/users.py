@@ -35,6 +35,7 @@ def login():
         from flask import session
         session['full_name'] = user.first_name + ' ' + user.last_name
         session['is_seller'] = user.is_seller
+        session['user_id'] = user.user_id
 
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
