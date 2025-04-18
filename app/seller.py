@@ -419,6 +419,8 @@ def order_details(order_id):
     # Replace order items with filtered list
     order.items = seller_items
 
+    print(order.items[0].status)
+
     return render_template(
         'seller/order_details.html',
         order=order

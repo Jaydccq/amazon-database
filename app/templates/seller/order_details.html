@@ -1,4 +1,4 @@
-{% extends "seller/../layout.html" %}
+{% extends "layout.html" %}
 
 {% block title %}Order Details | Gingerbread Marketplace{% endblock %}
 
@@ -84,24 +84,22 @@
                 </div>
             </div>
             <div class="card-footer">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <strong>Status:</strong>
-                        {% set unfulfilled = [item for item in order.items if item.status == 'Unfulfilled']|length %}
-                        {% if unfulfilled == 0 %}
-                            <span class="badge bg-success">Fulfilled</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark">{{ unfulfilled }} item{% if unfulfilled > 1 %}s{% endif %} pending</span>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <strong>Total:</strong> ${{ "%.2f"|format(order.total_amount) }}
-                    </div>
+                <div>
+                    <strong>Status:</strong>
+                    {% set unfulfilled_items = order.items|selectattr('status', 'equalto', 'Unfulfilled')|list %}
+                    {% if unfulfilled_items|length == 0 %}
+                        <span class="badge bg-success">Fulfilled</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">{{ unfulfilled_items|length }} item{% if unfulfilled_items|length > 1 %}s{% endif %} pending</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <strong>Total:</strong> ${{ "%.2f"|format(order.total_amount) }}
                 </div>
             </div>
         </div>
 
-        {% if unfulfilled > 0 %}
+        {% if unfulfilled_items|length > 0 %}
             <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Note:</strong> Once all items are fulfilled, the customer will be automatically notified.
