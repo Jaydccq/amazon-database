@@ -16,7 +16,7 @@ TRUNCATE TABLE accounts CASCADE;
 
 \copy products(product_id, category_id, product_name, description, image, owner_id, created_at, updated_at) FROM 'app/db/data/generated/Products.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
-\copy inventory(inventory_id, seller_id, product_id, quantity, unit_price, created_at, updated_at) FROM 'app/db/data/generated/Inventory.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
+\copy inventory(inventory_id, seller_id, product_id, quantity, unit_price, created_at, updated_at,owner_id) FROM 'app/db/data/generated/Inventory.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
 \copy reviews_feedbacks(review_id, user_id, comment, review_date, product_id, seller_id, rating, updated_at) FROM 'app/db/data/generated/Reviews_Feedbacks.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 

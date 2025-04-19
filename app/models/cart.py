@@ -1,7 +1,6 @@
 from flask import current_app as app
 from datetime import datetime
 
-
 class Cart:
     @staticmethod
     def add_to_cart(user_id, product_id, seller_id, quantity):
@@ -24,7 +23,6 @@ class Cart:
 
             cart_id = cart_rows[0][0]
 
-            # Get the current price from inventory
             price_rows = app.db.execute('''
             SELECT unit_price FROM Inventory
             WHERE product_id = :product_id AND seller_id = :seller_id
@@ -35,7 +33,6 @@ class Cart:
 
             unit_price = price_rows[0][0]
 
-            # Add to cart or update quantity
             result = app.db.execute('''
             INSERT INTO Cart_Products (cart_id, product_id, seller_id, quantity, price_at_addition, added_at)
             VALUES (:cart_id, :product_id, :seller_id, :quantity, :price, :added_at)
@@ -56,6 +53,7 @@ class Cart:
     @staticmethod
     def get_cart_items(user_id):
         try:
+            # Query all items in the user's cart
             result = app.db.execute('''
             SELECT 
                 cp.product_id, 
@@ -66,7 +64,8 @@ class Cart:
                 p.image,
                 cp.price_at_addition as unit_price,
                 (cp.quantity * cp.price_at_addition) as total_price,
-                CONCAT(a.first_name, ' ', a.last_name) as seller_name
+                CONCAT(a.first_name, ' ', a.last_name) as seller_name,
+                p.owner_id
             FROM Cart_Products cp
             JOIN Carts c ON cp.cart_id = c.cart_id
             JOIN Products p ON cp.product_id = p.product_id
@@ -81,7 +80,6 @@ class Cart:
     @staticmethod
     def checkout_cart(user_id):
         try:
-            # 获取用户购物车ID
             cart_rows = app.db.execute('''
                     SELECT cart_id FROM Carts WHERE user_id = :user_id
                 ''', user_id=user_id)
@@ -91,7 +89,6 @@ class Cart:
 
             cart_id = cart_rows[0][0]
 
-            # 获取购物车中的商品，并验证库存
             cart_items = app.db.execute('''
                 SELECT 
                     cp.product_id, 
@@ -105,35 +102,32 @@ class Cart:
                 ''', cart_id=cart_id)
 
             if not cart_items:
-                return False, "购物车为空"
+                return False, "your cart is empty"
 
-            # 检查库存是否充足
             insufficient_items = []
             for item in cart_items:
                 if item[2] > item[4]:
                     product_name = app.db.execute('''
                         SELECT product_name FROM Products WHERE product_id = :product_id
                         ''', product_id=item[0])[0][0]
-                    insufficient_items.append(f"{product_name} (需要: {item[2]}, 库存: {item[4]})")
+                    insufficient_items.append(f"{product_name} (Required: {item[2]}, In stock: {item[4]})")
 
             if insufficient_items:
-                return False, f"以下商品库存不足: {', '.join(insufficient_items)}"
+                return False, f"Insufficient stock for: {', '.join(insufficient_items)}"
 
-            # 计算总金额
+            # Calculate total order amount
             total_amount = sum(item[2] * item[3] for item in cart_items)
 
-            # 检查用户余额是否充足
+            # Check if user has enough balance
             user_balance = app.db.execute('''
                 SELECT current_balance FROM Accounts WHERE user_id = :user_id
                 ''', user_id=user_id)[0][0]
 
             if user_balance < total_amount:
-                return False, f"余额不足。需要: ${total_amount:.2f}, 当前余额: ${user_balance:.2f}"
+                return False, f"Insufficient balance. Required: ${total_amount:.2f}, Current balance: ${user_balance:.2f}"
 
-            # 开始事务，确保所有操作要么全部成功，要么全部失败
             app.db.execute('BEGIN')
 
-            # 按照卖家分组购物车商品
             sellers_items = {}
             for item in cart_items:
                 seller_id = item[1]
@@ -141,13 +135,11 @@ class Cart:
                     sellers_items[seller_id] = []
                 sellers_items[seller_id].append(item)
 
-            # 为每个卖家创建一个订单
             order_ids = []
             for seller_id, items in sellers_items.items():
                 seller_total = sum(item[2] * item[3] for item in items)
                 seller_num_products = sum(item[2] for item in items)
 
-                # 创建订单
                 order_rows = app.db.execute('''
                     INSERT INTO Orders (buyer_id, total_amount, num_products, order_date)
                     VALUES (:user_id, :total_amount, :num_products, CURRENT_TIMESTAMP)
@@ -157,7 +149,6 @@ class Cart:
                 order_id = order_rows[0][0]
                 order_ids.append(order_id)
 
-                # 添加订单商品
                 for item in items:
                     app.db.execute('''
                         INSERT INTO Orders_Products (order_id, product_id, seller_id, quantity, price)
@@ -168,43 +159,36 @@ class Cart:
                                    quantity=item[2],
                                    price=item[3])
 
-                    # 更新库存
                     app.db.execute('''
                         UPDATE Inventory
                         SET quantity = quantity - :order_quantity
                         WHERE product_id = :product_id AND seller_id = :seller_id
                         ''', order_quantity=item[2], product_id=item[0], seller_id=item[1])
 
-                    # 增加卖家余额
                     app.db.execute('''
                         UPDATE Accounts
                         SET current_balance = current_balance + :amount
                         WHERE user_id = :seller_id
                         ''', amount=item[2] * item[3], seller_id=item[1])
 
-            # 扣减买家余额
             app.db.execute('''
                 UPDATE Accounts
                 SET current_balance = current_balance - :amount
                 WHERE user_id = :user_id
                 ''', amount=total_amount, user_id=user_id)
 
-            # 清空购物车
             app.db.execute('''
                 DELETE FROM Cart_Products
                 WHERE cart_id = :cart_id
                 ''', cart_id=cart_id)
 
-            # 提交事务
             app.db.execute('COMMIT')
 
             return True, order_ids
 
         except Exception as e:
-            # 回滚事务
             app.db.execute('ROLLBACK')
             import traceback
             print("======== CHECKOUT ERROR ========")
             traceback.print_exc()
             return False, str(e)
-

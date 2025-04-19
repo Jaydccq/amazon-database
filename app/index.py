@@ -60,8 +60,10 @@ def index():
             inventory_items = product.get_inventory_items()
             if inventory_items:
                 product.price = min(item.unit_price for item in inventory_items)
+                product.available_seller_id = inventory_items[0].seller_id##
             else:
                 product.price = 0.00
+                product.available_seller_id = None
 
     if current_user.is_authenticated:
         purchases = Order.get_for_buyer(current_user.id)

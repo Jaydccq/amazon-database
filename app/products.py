@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, jsonify, request, abort
 from flask_login import current_user
 from app.models.product import Product
 from app.models.review import Review
+from app.models.inventory import Inventory
 
 bp = Blueprint("product", __name__, url_prefix="/products")
 
@@ -12,6 +13,11 @@ def product_detail(product_id):
     if not product:
         abort(404, description="Product not found")
 
+    inventory_items = Inventory.get_sellers_for_product(product_id)
+
+    product.inventory = inventory_items
+
+    reviews = Review.get_product_review(product_id)
     reviews = Review.get_product_review(product_id)
 
 

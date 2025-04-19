@@ -4,7 +4,7 @@ from datetime import datetime
 
 class Inventory:
     def __init__(self, inventory_id, seller_id, product_id, quantity, unit_price,
-                 created_at, updated_at, product_name=None, seller_name=None,
+                 created_at, updated_at, owner_id=None, product_name=None, seller_name=None,
                  category_id=None, category_name=None, image=None):
         self.inventory_id = inventory_id
         self.seller_id = seller_id
@@ -13,6 +13,7 @@ class Inventory:
         self.unit_price = unit_price
         self.created_at = created_at
         self.updated_at = updated_at
+        self.owner_id = owner_id
         self.product_name = product_name
         self.seller_name = seller_name
         self.category_id = category_id
@@ -21,10 +22,9 @@ class Inventory:
 
     @staticmethod
     def get(inventory_id):
-        """Get a specific inventory item by ID"""
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
+                   i.created_at, i.updated_at, i.owner_id, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id
@@ -37,7 +37,6 @@ class Inventory:
 
     @staticmethod
     def get_by_seller_and_product(seller_id, product_id):
-        """Get inventory for a specific seller and product combination"""
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
                    i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
@@ -53,10 +52,9 @@ class Inventory:
 
     @staticmethod
     def get_for_seller(seller_id, limit=20, offset=0, search_query=None, category_id=None):
-        """Get inventory items for a specific seller with optional filtering"""
         query = '''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
+                   i.created_at, i.updated_at, i.owner_id, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id
@@ -83,7 +81,6 @@ class Inventory:
 
     @staticmethod
     def count_for_seller(seller_id, search_query=None, category_id=None):
-        """Count inventory items for pagination"""
         query = '''
             SELECT COUNT(*)
             FROM Inventory i
@@ -105,20 +102,28 @@ class Inventory:
 
     @staticmethod
     def create(seller_id, product_id, quantity, unit_price):
-        """Add a product to seller's inventory"""
         try:
+            owner_rows = app.db.execute('''
+                SELECT owner_id FROM Products WHERE product_id = :product_id
+            ''', product_id=product_id)
+
+            if not owner_rows:
+                return None
+
+            owner_id = owner_rows[0][0]
+
             inventory_id = app.db.execute('''
-                INSERT INTO Inventory (seller_id, product_id, quantity, unit_price)
-                VALUES (:seller_id, :product_id, :quantity, :unit_price)
+                INSERT INTO Inventory (seller_id, product_id, quantity, unit_price, owner_id)
+                VALUES (:seller_id, :product_id, :quantity, :unit_price, :owner_id)
                 RETURNING inventory_id
             ''', seller_id=seller_id, product_id=product_id,
-                                          quantity=quantity, unit_price=unit_price)
+                                          quantity=quantity, unit_price=unit_price, owner_id=owner_id)
 
             return inventory_id[0][0] if inventory_id else None
         except Exception as e:
             print(f"Error creating inventory: {e}")
             return None
-    
+
     @staticmethod
     def to_dict(self):
         return {
@@ -132,10 +137,10 @@ class Inventory:
             'category_id': self.category_id,
             'category_name': self.category_name,
             'image': self.image,
+            'owner_id': self.owner_id,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
         }
-
 
     @staticmethod
     def update(inventory_id, seller_id, quantity=None, unit_price=None):
@@ -191,7 +196,7 @@ class Inventory:
         """Get all sellers offering a specific product"""
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
-                   i.created_at, i.updated_at, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
+                   i.created_at, i.updated_at, i.owner_id, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
                    p.category_id, pc.category_name, p.image
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id

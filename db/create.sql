@@ -179,6 +179,14 @@ CREATE TABLE Orders_Products (
     FOREIGN KEY (seller_id) REFERENCES Accounts(user_id)
 );
 
+UPDATE Inventory i
+SET owner_id = (
+    SELECT owner_id
+    FROM Products p
+    WHERE p.product_id = i.product_id
+);
+
+
 -- Create indexes for foreign keys to improve query performance
 CREATE INDEX idx_products_category ON Products(category_id);
 CREATE INDEX idx_products_owner ON Products(owner_id);

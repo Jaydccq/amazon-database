@@ -101,7 +101,7 @@
                                     {% if current_user.is_authenticated %}
                                         <form action="{{ url_for('cart.add_to_cart') }}" method="POST" class="d-inline">
                                             <input type="hidden" name="product_id" value="{{ product.id }}">
-                                            <input type="hidden" name="seller_id" value="{{ product.owner_id }}">
+                                            <input type="hidden" name="seller_id" value="{{ product.available_seller_id }}">
                                             <input type="hidden" name="quantity" value="1">
                                             <button type="submit" class="btn btn-sm btn-primary">
                                                 <i class="fas fa-cart-plus"></i> Add to Cart
