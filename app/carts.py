@@ -46,6 +46,9 @@ def add_to_cart():
 
     try:
         inventory = Inventory.get_by_seller_and_product(seller_id, product_id)
+        print(f"Inventory: {inventory}")
+        print("seller_id:", seller_id)
+        print("product_id:", product_id)
         if not inventory or inventory.quantity < quantity:
             flash("This product is out of stock or not available in the requested quantity", "warning")
             return redirect(request.referrer or url_for('index.index'))
