@@ -12,28 +12,20 @@ TRUNCATE TABLE accounts CASCADE;
 
 \copy accounts(user_id, email, password, first_name, last_name, address, current_balance, is_seller, created_at, updated_at) FROM 'app/db/data/generated/Accounts.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 2. Load product categories
 \copy products_categories(category_id, category_name, created_at) FROM 'app/db/data/generated/Products_Categories.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 3. Load products
 \copy products(product_id, category_id, product_name, description, image, owner_id, created_at, updated_at) FROM 'app/db/data/generated/Products.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 4. Load inventory
 \copy inventory(inventory_id, seller_id, product_id, quantity, unit_price, created_at, updated_at) FROM 'app/db/data/generated/Inventory.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 5. Load reviews
 \copy reviews_feedbacks(review_id, user_id, comment, review_date, product_id, seller_id, rating, updated_at) FROM 'app/db/data/generated/Reviews_Feedbacks.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 6. Load carts
 \copy carts(cart_id, user_id, created_at, updated_at) FROM 'app/db/data/generated/Carts.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 7. Load cart_products
 \copy cart_products(cart_id, product_id, seller_id, quantity, price_at_addition, added_at) FROM 'app/db/data/generated/Cart_Products.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 8. Load orders
 \copy orders(order_id, buyer_id, total_amount, order_date, num_products, order_status) FROM 'app/db/data/generated/Orders.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
--- 9. Load orders_products
 \copy orders_products(order_id, product_id, quantity, price, seller_id, status, fulfillment_date) FROM 'app/db/data/generated/Orders_Products.csv' WITH (FORMAT CSV, DELIMITER ',', HEADER true);
 
 
@@ -47,7 +39,6 @@ SELECT pg_catalog.setval('carts_cart_id_seq', COALESCE((SELECT MAX(cart_id) FROM
 SELECT pg_catalog.setval('orders_order_id_seq', COALESCE((SELECT MAX(order_id) FROM orders), 1), true);
 
 
--- Verify data was loaded correctly (optional, but good practice)
 \echo 'Verification Counts:'
 SELECT COUNT(*) AS user_count FROM accounts;
 SELECT COUNT(*) AS category_count FROM products_categories;
