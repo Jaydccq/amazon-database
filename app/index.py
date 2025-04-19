@@ -19,7 +19,6 @@ def index():
     sort_by = request.args.get('sort_by', 'name')
     sort_dir = request.args.get('sort_dir', 'asc')
 
-    # Pagination parameters
     page = request.args.get('page', 1, type=int)
     per_page = 12  # Number of products per page
 
@@ -54,7 +53,6 @@ def index():
                 limit=per_page,
                 offset=(page - 1) * per_page
             )
-            # Get total count for pagination
             total_products = Product.count_search_results(query=search_query)
 
     for product in products:
