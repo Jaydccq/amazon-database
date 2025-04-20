@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}Top Up Balance | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-wallet me-2"></i>Top Up Balance</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 text-center">
+                        <h5>Current Balance</h5>
+                        <h2 class="text-primary">${{ "%.2f"|format(current_user.current_balance) }}</h2>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('users.topup') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount to Add ($)</label>
+                            {{ form.amount(class="form-control", placeholder="Enter amount", min="0.01", step="0.01", type="number") }}
+                            {% if form.amount.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.amount.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('users.profile') }}" class="text-decoration-none">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

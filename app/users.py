@@ -98,7 +98,10 @@ class TopUpForm(FlaskForm):
 def topup():
     form = TopUpForm()
     if form.validate_on_submit():
-        new_balance = current_user.current_balance + form.amount.data
+        # Convert float to Decimal to avoid type mismatch
+        from decimal import Decimal
+        amount_decimal = Decimal(str(form.amount.data))  # Convert via string to avoid precision issues
+        new_balance = current_user.current_balance + amount_decimal
 
         app.db.execute("""
             UPDATE Accounts
@@ -106,8 +109,8 @@ def topup():
             WHERE user_id = :uid
         """, balance=new_balance, uid=current_user.user_id)
 
-        current_user.current_balance = new_balance  
-        flash(f'Successfully topped up ${form.amount.data:.2f}!')
+        current_user.current_balance = new_balance
+        flash(f'Successfully topped up ${amount_decimal:.2f}!')
         return redirect(url_for('users.profile'))
 
     return render_template('topup.html', form=form)
