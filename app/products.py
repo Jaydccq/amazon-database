@@ -16,6 +16,8 @@ def product_detail(product_id):
     inventory_items = Inventory.get_sellers_for_product(product_id)
 
     product.inventory = inventory_items
+    product.image = f"/static/uploads/{product.image}"
+    print(product.image)
 
     reviews = Review.get_product_review(product_id)
     reviews = Review.get_product_review(product_id)
