@@ -1,0 +1,117 @@
+
+psql -h localhost -p 15432 -U miniamazon -d miniamazon
+ssh -L 15432:localhost:5432 zs181@vcm-45418.vm.duke.edu
+psql -h localhost -p 15432 -U miniamazon -d miniamazon -f load_app_data.sql
+python /app/data_generator.py
+
+                          List of relations
+ Schema |                Name                 |   Type   |   Owner
+--------+-------------------------------------+----------+------------
+ public | accounts                            | table    | miniamazon
+ public | accounts_user_id_seq                | sequence | miniamazon
+ public | cart_products                       | table    | miniamazon
+ public | carts                               | table    | miniamazon
+ public | carts_cart_id_seq                   | sequence | miniamazon
+ public | inventory                           | table    | miniamazon
+ public | inventory_details                   | view     | miniamazon
+ public | inventory_inventory_id_seq          | sequence | miniamazon
+ public | orders                              | table    | miniamazon
+miniamazon=#
+miniamazon=# SELECT
+  c.table_name,
+  c.ordinal_position AS 列序号,
+  c.column_name    AS 列名,
+  c.data_type      AS 数据类型,
+  c.is_nullable    AS 可否为空,
+  c.character_maximum_length AS 最大长度
+FROM information_schema.columns AS c
+WHERE c.table_schema = 'public'
+ORDER BY c.table_name, c.ordinal_position;
+     table_name      | 列序号 |       列名        |          数据类型           | 可否为空 | 最大长度
+---------------------+--------+-------------------+-----------------------------+----------+----------
+ accounts            |      1 | user_id           | integer                     | NO       |
+ accounts            |      2 | email             | character varying           | NO       |      255
+ accounts            |      3 | first_name        | character varying           | NO       |       50
+ accounts            |      4 | last_name         | character varying           | NO       |       50
+ accounts            |      5 | address           | text                        | YES      |
+ accounts            |      6 | password          | character varying           | NO       |      255
+ accounts            |      7 | current_balance   | numeric                     | YES      |
+ accounts            |      8 | is_seller         | boolean                     | YES      |
+ accounts            |      9 | created_at        | timestamp without time zone | YES      |
+ accounts            |     10 | updated_at        | timestamp without time zone | YES      |
+ cart_products       |      1 | cart_id           | integer                     | NO       |
+ cart_products       |      2 | product_id        | integer                     | NO       |
+ cart_products       |      3 | seller_id         | integer                     | NO       |
+ cart_products       |      4 | quantity          | integer                     | NO       |
+ cart_products       |      5 | price_at_addition | numeric                     | NO       |
+ cart_products       |      6 | added_at          | timestamp without time zone | YES      |
+ carts               |      1 | cart_id           | integer                     | NO       |
+ carts               |      2 | user_id           | integer                     | NO       |
+ carts               |      3 | created_at        | timestamp without time zone | YES      |
+ carts               |      4 | updated_at        | timestamp without time zone | YES      |
+ inventory           |      1 | inventory_id      | integer                     | NO       |
+ inventory           |      2 | seller_id         | integer                     | NO       |
+ inventory           |      3 | product_id        | integer                     | NO       |
+ inventory           |      4 | quantity          | integer                     | NO       |
+ inventory           |      5 | unit_price        | numeric                     | NO       |
+ inventory           |      6 | created_at        | timestamp without time zone | YES      |
+ inventory           |      7 | updated_at        | timestamp without time zone | YES      |
+ inventory           |      8 | owner_id          | integer                     | YES      |
+ inventory_details   |      1 | inventory_id      | integer                     | YES      |
+ inventory_details   |      2 | seller_id         | integer                     | YES      |
+ inventory_details   |      3 | seller_name       | text                        | YES      |
+ inventory_details   |      4 | product_id        | integer                     | YES      |
+ inventory_details   |      5 | product_name      | character varying           | YES      |      100
+ inventory_details   |      6 | category_id       | integer                     | YES      |
+ inventory_details   |      7 | category_name     | character varying           | YES      |      100
+ inventory_details   |      8 | image             | character varying           | YES      |      255
+ inventory_details   |      9 | quantity          | integer                     | YES      |
+ inventory_details   |     10 | unit_price        | numeric                     | YES      |
+ inventory_details   |     11 | created_at        | timestamp without time zone | YES      |
+ inventory_details   |     12 | updated_at        | timestamp without time zone | YES      |
+ inventory_details   |     13 | seller_rating     | numeric                     | YES      |
+ orders              |      1 | order_id          | integer                     | NO       |
+ orders              |      2 | buyer_id          | integer                     | NO       |
+ orders              |      3 | total_amount      | numeric                     | NO       |
+ orders              |      4 | order_date        | timestamp without time zone | YES      |
+ orders              |      5 | num_products      | integer                     | NO       |
+ orders              |      6 | order_status      | character varying           | NO       |       20
+ orders_products     |      1 | order_id          | integer                     | NO       |
+ orders_products     |      2 | product_id        | integer                     | NO       |
+ orders_products     |      3 | quantity          | integer                     | NO       |
+ orders_products     |      4 | price             | numeric                     | NO       |
+ orders_products     |      5 | seller_id         | integer                     | NO       |
+ orders_products     |      6 | status            | character varying           | NO       |       20
+ orders_products     |      7 | fulfillment_date  | timestamp without time zone | YES      |
+ orders_products     |      8 | order_item_id     | integer                     | NO       |
+ product_details     |      1 | product_id        | integer                     | YES      |
+ product_details     |      2 | product_name      | character varying           | YES      |      100
+ product_details     |      3 | description       | text                        | YES      |
+ product_details     |      4 | image             | character varying           | YES      |      255
+ product_details     |      5 | category_id       | integer                     | YES      |
+ product_details     |      6 | category_name     | character varying           | YES      |      100
+ product_details     |      7 | owner_id          | integer                     | YES      |
+ product_details     |      8 | owner_name        | text                        | YES      |
+ product_details     |      9 | created_at        | timestamp without time zone | YES      |
+ product_details     |     10 | updated_at        | timestamp without time zone | YES      |
+ product_details     |     11 | average_rating    | numeric                     | YES      |
+ product_details     |     12 | review_count      | bigint                      | YES      |
+ products            |      1 | product_id        | integer                     | NO       |
+ products            |      2 | category_id       | integer                     | NO       |
+ products            |      3 | product_name      | character varying           | NO       |      100
+ products            |      4 | description       | text                        | YES      |
+ products            |      5 | image             | character varying           | YES      |      255
+ products            |      6 | owner_id          | integer                     | NO       |
+ products            |      7 | created_at        | timestamp without time zone | YES      |
+ products            |      8 | updated_at        | timestamp without time zone | YES      |
+ products_categories |      1 | category_id       | integer                     | NO       |
+ products_categories |      2 | category_name     | character varying           | NO       |      100
+ products_categories |      3 | created_at        | timestamp without time zone | YES      |
+ reviews_feedbacks   |      1 | review_id         | integer                     | NO       |
+ reviews_feedbacks   |      2 | user_id           | integer                     | NO       |
+ reviews_feedbacks   |      3 | product_id        | integer                     | YES      |
+ reviews_feedbacks   |      4 | seller_id         | integer                     | YES      |
+ reviews_feedbacks   |      5 | comment           | text                        | NO       |
+ reviews_feedbacks   |      6 | review_date       | timestamp without time zone | YES      |
+ reviews_feedbacks   |      7 | updated_at        | timestamp without time zone | YES      |
+ reviews_feedbacks   |      8 | rating            | integer                     | NO       |
