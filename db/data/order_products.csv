@@ -1,0 +1,5 @@
+INSERT INTO Orders_Products (order_id, product_id, quantity, price, seller_id, status, fulfillment_date)
+VALUES 
+(12, 3, 2, 19.99, 3, 'Unfulfilled', NULL),
+(13, 3, 1, 25.50, 3, 'Fulfilled', '2025-03-27 15:00:00'),
+(14, 3, 3, 10.00, 3, 'Unfulfilled', NULL);
