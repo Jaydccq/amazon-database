@@ -77,12 +77,13 @@ CREATE TABLE Cart_Products (
     quantity INT NOT NULL DEFAULT 1,
     price_at_addition DECIMAL(10,2) NOT NULL,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'in_cart',
     PRIMARY KEY (cart_id, product_id, seller_id),
     FOREIGN KEY (cart_id) REFERENCES Carts(cart_id),
     FOREIGN KEY (product_id) REFERENCES Products(product_id),
-    FOREIGN KEY (seller_id) REFERENCES Accounts(user_id)
+    FOREIGN KEY (seller_id) REFERENCES Accounts(user_id),
+    CHECK (status IN ('in_cart', 'saved_for_later'))
 );
-
 -- Create Reviews_Feedbacks table
 CREATE TABLE Reviews_Feedbacks (
     review_id SERIAL PRIMARY KEY,
@@ -93,6 +94,8 @@ CREATE TABLE Reviews_Feedbacks (
     review_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     rating INT NOT NULL,
+    upvotes INT DEFAULT 0 NOT NULL,
+    downvotes INT DEFAULT 0 NOT NULL,
     FOREIGN KEY (user_id) REFERENCES Accounts(user_id),
     FOREIGN KEY (product_id) REFERENCES Products(product_id),
     FOREIGN KEY (seller_id) REFERENCES Accounts(user_id),
@@ -104,6 +107,24 @@ CREATE TABLE Reviews_Feedbacks (
     ),
     CHECK (rating >= 1 AND rating <= 5)
 );
+CREATE TABLE ReviewVotes (
+    vote_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    review_id INT NOT NULL,
+    vote_type INT NOT NULL, -- 1 for upvote, -1 for downvote
+    voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Accounts(user_id),
+    FOREIGN KEY (review_id) REFERENCES Reviews_Feedbacks(review_id) ON DELETE CASCADE, -- Delete vote if review is deleted
+    UNIQUE (user_id, review_id), -- Ensure one vote per user per review
+    CHECK (vote_type IN (1, -1)) -- Ensure vote_type is either 1 or -1
+);
+CREATE INDEX idx_reviewvotes_review ON ReviewVotes(review_id);
+CREATE INDEX idx_reviewvotes_user_review ON ReviewVotes(user_id, review_id);
+CREATE INDEX idx_reviews_helpfulness ON Reviews_Feedbacks((upvotes - downvotes) DESC, review_date DESC);
+
+
+
+
 
 -- Create Orders table
 CREATE TABLE Orders (
@@ -158,7 +179,11 @@ CREATE INDEX idx_orders_buyer ON Orders(buyer_id);
 CREATE INDEX idx_orders_products_order ON Orders_Products(order_id);
 CREATE INDEX idx_orders_products_product ON Orders_Products(product_id);
 CREATE INDEX idx_orders_products_seller ON Orders_Products(seller_id);
-
+CREATE INDEX idx_cart_products_cart ON Cart_Products(cart_id);
+CREATE INDEX idx_cart_products_product ON Cart_Products(product_id);
+CREATE INDEX idx_cart_products_seller ON Cart_Products(seller_id);
+-- <<< Optional: Add index on status for faster filtering
+CREATE INDEX idx_cart_products_status ON Cart_Products(status);
 -- Add comments to tables
 COMMENT ON TABLE Accounts IS 'Stores user account information for both buyers and sellers';
 COMMENT ON TABLE Products_Categories IS 'Categories for products (e.g., Electronics, Clothing)';

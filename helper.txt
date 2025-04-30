@@ -1,8 +1,9 @@
+psql -h localhost -p 15432 -U miniamazon -d miniamazon -f db/create.sql
 
 psql -h localhost -p 15432 -U miniamazon -d miniamazon
 ssh -L 15432:localhost:5432 zs181@vcm-45418.vm.duke.edu
 psql -h localhost -p 15432 -U miniamazon -d miniamazon -f load_app_data.sql
-python /app/data_generator.py
+python app/data_generator.py
 
                           List of relations
  Schema |                Name                 |   Type   |   Owner

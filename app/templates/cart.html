@@ -2,14 +2,29 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Your Shopping Cart</h1>
 
-    {% if cart_items %}
-        <div class="table-responsive">
-            <table class="table table-hover">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h1>Shopping Cart</h1>
+
+    {# --- In Cart Items Section --- #}
+    {% if in_cart_items %}
+        <div class="table-responsive mb-5">
+            <table class="table table-hover align-middle"> {# Added align-middle for better vertical alignment #}
                 <thead class="thead-dark">
                     <tr>
-                        <th>Product</th>
+                        <th style="width: 40%;">Product</th>
                         <th>Seller</th>
                         <th>Price</th>
                         <th>Quantity</th>
@@ -18,73 +33,155 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in cart_items %}
+                    {% for item in in_cart_items %}
+                    {# item format: [product_id, seller_id, quantity, product_name, description, image, unit_price, total_price, seller_name, owner_id, status] #}
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-{#                                {% if item[5] %}#}
-{#                                    <img src="{{ item[5] }}" alt="{{ item[3] }}" class="img-thumbnail mr-3" style="max-width: 80px;">#}
-{#                                {% else %}#}
-{#                                    <div class="bg-secondary text-white rounded mr-3 p-3 text-center">#}
-{#                                        <i class="fas fa-image"></i>#}
-{#                                    </div>#}
-{#                                {% endif %}#}
+                                {# Placeholder for image if you add it later
+                                <img src="{{ item[5] or url_for('static', filename='images/placeholder.png') }}" alt="{{ item[3] }}" class="img-thumbnail mr-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                #}
                                 <div>
-                                    <h6>{{ item[3] }}</h6>
-                                    <small class="text-muted">{{ item[4]|truncate(50) }}</small>
+                                    <h6>{{ item[3] }}</h6> {# product_name #}
+                                    <small class="text-muted">{{ item[4]|truncate(50) }}</small> {# description #}
                                 </div>
                             </div>
                         </td>
-                        <td>{{ item[8] }}</td>
-                        <td>${{ "%.2f"|format(item[6]) }}</td>
+                        <td>{{ item[8] }}</td> {# seller_name #}
+                        <td>${{ "%.2f"|format(item[6]) }}</td> {# unit_price #}
                         <td>
+                            {# Update Quantity Form #}
                             <form action="{{ url_for('cart.update_cart') }}" method="POST" class="form-inline">
                                 <input type="hidden" name="product_id" value="{{ item[0] }}">
                                 <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                <input type="number" name="quantity" value="{{ item[2] }}" min="1" class="form-control form-control-sm" style="width: 60px;">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary ml-2">Update</button>
+                                <input type="number" name="quantity" value="{{ item[2] }}" min="1" class="form-control form-control-sm mr-2" style="width: 70px;">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Update quantity"><i class="fas fa-sync-alt"></i></button>
                             </form>
                         </td>
-                        <td><strong>${{ "%.2f"|format(item[7]) }}</strong></td>
+                        <td><strong>${{ "%.2f"|format(item[7]) }}</strong></td> {# total_price #}
                         <td>
-                            <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
-                                <input type="hidden" name="product_id" value="{{ item[0] }}">
-                                <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    <i class="fas fa-trash"></i> Remove
-                                </button>
-                            </form>
+                            {# Action Buttons: Save for Later & Remove #}
+                             <div class="d-flex">
+                                <form action="{{ url_for('cart.save_for_later') }}" method="POST" class="mr-1">
+                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Save for Later">
+                                        <i class="fas fa-save"></i> <span class="d-none d-md-inline">Save</span> {# Hide text on small screens #}
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
+                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove from cart">
+                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Remove</span> {# Hide text on small screens #}
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="4" class="text-right"><strong>Total:</strong></td>
+                        <td colspan="4" class="text-right"><strong>Subtotal:</strong></td>
                         <td><strong>${{ "%.2f"|format(total_cart_value) }}</strong></td>
-                        <td></td>
+                        <td></td> {# Empty cell for alignment #}
                     </tr>
                 </tfoot>
             </table>
         </div>
 
-        <div class="mt-4 d-flex justify-content-between">
+        {# Checkout Button - Only show if items are in the cart #}
+        <div class="mt-4 d-flex justify-content-between align-items-center">
             <a href="{{ url_for('index.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Continue Shopping
             </a>
             <form method="POST" action="{{ url_for('cart.checkout') }}">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-shopping-cart"></i> Proceed to Checkout
+                <button type="submit" class="btn btn-success btn-lg"> {# Larger button #}
+                    <i class="fas fa-shopping-cart"></i> Proceed to Checkout (${{ "%.2f"|format(total_cart_value) }})
                 </button>
-            </form>            
+            </form>
         </div>
+
     {% else %}
-        <div class="alert alert-info text-center p-5">
-            <i class="fas fa-shopping-cart fa-3x mb-3"></i>
-            <h4>Your cart is empty</h4>
-            <p>Add some items to your cart to see them here.</p>
+        {# Message when the main cart is empty #}
+         <div class="alert alert-info text-center p-4">
+            <i class="fas fa-shopping-cart fa-2x mb-3"></i>
+            <h4>Your shopping cart is empty.</h4>
+            {% if not saved_items %} {# Only show if saved is also empty #}
+            <p>Add some items to get started!</p>
+            <a href="{{ url_for('index.index') }}" class="btn btn-primary mt-2">Browse Products</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+
+    {# --- Saved For Later Section --- #}
+    {% if saved_items %}
+        <hr class="my-5"> {# Separator #}
+        <h2>Saved for Later ({{ saved_items|length }})</h2>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                 <thead class="thead-light"> {# Lighter header for this section #}
+                    <tr>
+                        <th style="width: 50%;">Product</th>
+                        <th>Seller</th>
+                        <th>Price When Added</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in saved_items %}
+                     {# item format: [product_id, seller_id, quantity, product_name, description, image, unit_price, total_price, seller_name, owner_id, status] #}
+                    <tr>
+                        <td>
+                             <div class="d-flex align-items-center">
+                                {# Placeholder for image
+                                <img src="{{ item[5] or url_for('static', filename='images/placeholder.png') }}" alt="{{ item[3] }}" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                #}
+                                <div>
+                                    <h6>{{ item[3] }}</h6> {# product_name #}
+                                    <small class="text-muted">Quantity saved: {{ item[2] }}</small> {# Show saved quantity #}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ item[8] }}</td> {# seller_name #}
+                        <td>${{ "%.2f"|format(item[6]) }}</td> {# unit_price (price_at_addition) #}
+                        <td>
+                             {# Action Buttons: Move to Cart & Remove #}
+                             <div class="d-flex">
+                                <form action="{{ url_for('cart.move_to_cart_route') }}" method="POST" class="mr-1">
+                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Move back to cart">
+                                        <i class="fas fa-cart-plus"></i> <span class="d-none d-md-inline">Move to Cart</span>
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
+                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove permanently">
+                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Remove</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {# Message if both carts are empty #}
+    {% if not in_cart_items and not saved_items %}
+        <div class="alert alert-info text-center p-5 mt-4">
+            <i class="fas fa-shopping-bag fa-3x mb-3"></i>
+            <h4>Your cart and saved items are empty.</h4>
+            <p>Start shopping to add items!</p>
             <a href="{{ url_for('index.index') }}" class="btn btn-primary mt-2">Browse Products</a>
         </div>
     {% endif %}
-</div>
+
+</div> {# End container #}
 {% endblock %}
