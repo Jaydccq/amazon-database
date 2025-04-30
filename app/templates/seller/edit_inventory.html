@@ -6,7 +6,13 @@
 <div class="row mb-4">
     <div class="col-md-8">
         <h1>Edit Inventory Item</h1>
-        <p class="text-muted">Update product quantity and pricing</p>
+        <p class="text-muted">
+            {% if is_owner %}
+            Update product details, quantity and pricing
+            {% else %}
+            Update product quantity and pricing
+            {% endif %}
+        </p>
     </div>
     <div class="col-md-4 text-end">
         <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-secondary">
@@ -22,22 +28,77 @@
                 <h5 class="mb-0">Update "{{ item.product_name }}" Details</h5>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="quantity" class="form-label">Quantity in Stock</label>
-                                <input type="number" class="form-control" id="quantity" name="quantity"
-                                       value="{{ item.quantity }}" min="0" required>
-                                <div class="form-text">Enter the number of units available for sale.</div>
+                <form method="POST" action="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}" enctype="multipart/form-data">
+                    <!-- Product Details Section (only for product owners) -->
+                    {% if is_owner %}
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Product Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product_name" class="form-label">Product Name</label>
+                                    <input type="text" class="form-control" id="product_name" name="product_name"
+                                        value="{{ item.product_name }}" required>
+                                    <div class="form-text">Original: {{ item.product_name }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category</label>
+                                    <select class="form-select" id="category_id" name="category_id" required>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if category.id == item.category_id %}selected{% endif %}>
+                                            {{ category.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-text">Original: {{ item.category_name }}</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="unit_price" class="form-label">Unit Price ($)</label>
-                                <input type="number" class="form-control" id="unit_price" name="unit_price"
-                                       value="{{ item.unit_price }}" min="0.01" step="0.01" required>
-                                <div class="form-text">Set the price for each unit.</div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required>{{ item.description }}</textarea>
+                            <div class="form-text">
+                                <strong>Original Description:</strong><br>
+                                <div class="border rounded p-2 bg-light mt-1">{{ item.description }}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product_image" class="form-label">Product Image</label>
+                            <input type="file" class="form-control" id="product_image" name="product_image" accept="image/*">
+                            <div class="form-text">Leave empty to keep the current image.</div>
+                            {% if item.image %}
+                            <div class="mt-2">
+                                <label class="form-check-label">
+                                    <img src="{{ item.image }}" alt="{{ item.product_name }}" class="img-thumbnail" style="max-height: 100px">
+                                    <div>Current image</div>
+                                </label>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Inventory Section (for all sellers) -->
+                    <div class="mb-4">
+                        <h6 class="border-bottom pb-2 mb-3">Inventory Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="quantity" class="form-label">Quantity in Stock</label>
+                                    <input type="number" class="form-control" id="quantity" name="quantity"
+                                        value="{{ item.quantity }}" min="0" required>
+                                    <div class="form-text">Enter the number of units available for sale.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="unit_price" class="form-label">Unit Price ($)</label>
+                                    <input type="number" class="form-control" id="unit_price" name="unit_price"
+                                        value="{{ item.unit_price }}" min="0.01" step="0.01" required>
+                                    <div class="form-text">Set the price for each unit.</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -90,6 +151,16 @@
                     <h6 class="text-muted">Last Updated</h6>
                     <p class="mb-0">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
                 </div>
+
+                {% if is_owner %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i> You are the owner of this product and can edit all details.
+                </div>
+                {% else %}
+                <div class="alert alert-secondary mb-0">
+                    <i class="fas fa-info-circle me-2"></i> You can only update inventory details for this product.
+                </div>
+                {% endif %}
             </div>
         </div>
 

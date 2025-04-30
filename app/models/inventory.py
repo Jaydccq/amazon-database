@@ -5,7 +5,7 @@ from datetime import datetime
 class Inventory:
     def __init__(self, inventory_id, seller_id, product_id, quantity, unit_price,
                  created_at, updated_at, owner_id=None, product_name=None, seller_name=None,
-                 category_id=None, category_name=None, image=None):
+                 category_id=None, category_name=None, image=None, description=None):
         self.inventory_id = inventory_id
         self.seller_id = seller_id
         self.product_id = product_id
@@ -18,6 +18,7 @@ class Inventory:
         self.seller_name = seller_name
         self.category_id = category_id
         self.category_name = category_name
+        self.description = description
         self.image = image
 
     @staticmethod
@@ -25,7 +26,7 @@ class Inventory:
         rows = app.db.execute('''
             SELECT i.inventory_id, i.seller_id, i.product_id, i.quantity, i.unit_price, 
                    i.created_at, i.updated_at, i.owner_id, p.product_name, CONCAT(a.first_name, ' ', a.last_name) AS seller_name,
-                   p.category_id, pc.category_name, p.image
+                   p.category_id, pc.category_name, p.image, p.description
             FROM Inventory i
             JOIN Products p ON i.product_id = p.product_id
             JOIN Accounts a ON i.seller_id = a.user_id

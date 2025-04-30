@@ -292,6 +292,7 @@ def view_order_details(order_id):
             }
 
         # Add item to seller group
+        item.image = f"/static/uploads/{item.image}"
         sellers[item.seller_id]['products'].append(item)  # Changed from 'items' to 'products'
 
         # Add to seller subtotal
