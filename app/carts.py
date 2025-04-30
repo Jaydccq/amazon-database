@@ -8,12 +8,12 @@ bp = Blueprint("cart", __name__, url_prefix="/cart")
 @bp.route('/cart/checkout', methods=['POST'])
 @login_required
 def checkout():
-    success = Cart.checkout_cart(current_user.id)
+    success, info = Cart.checkout_cart(current_user.id)
     if success:
         flash("Checkout successful!")
         return redirect(url_for('index.index'))
     else:
-        flash("Checkout failed. Please try again.")
+        flash("Checkout failed. "+ info)
     return redirect(url_for('index.index'))
 
 @bp.route("/", methods=["GET"])

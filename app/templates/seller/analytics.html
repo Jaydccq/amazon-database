@@ -1,0 +1,510 @@
+{% extends "layout.html" %}
+
+{% block title %}Product Analytics | Gingerbread Marketplace{% endblock %}
+
+{% block head %}
+{{ super() }}
+
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Product Analytics & Trends</h1>
+        <p class="text-muted">Visualize your product performance and inventory trends</p>
+    </div>
+    <div class="col-md-4">
+        <div class="d-flex justify-content-end">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('seller.product_analytics', days=7) }}" class="btn btn-{% if days == 7 %}primary{% else %}outline-primary{% endif %}">
+                    7 Days
+                </a>
+                <a href="{{ url_for('seller.product_analytics', days=30) }}" class="btn btn-{% if days == 30 %}primary{% else %}outline-primary{% endif %}">
+                    30 Days
+                </a>
+                <a href="{{ url_for('seller.product_analytics', days=90) }}" class="btn btn-{% if days == 90 %}primary{% else %}outline-primary{% endif %}">
+                    90 Days
+                </a>
+                <a href="{{ url_for('seller.product_analytics', days=365) }}" class="btn btn-{% if days == 365 %}primary{% else %}outline-primary{% endif %}">
+                    Year
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overview stats -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Sales by Category</h5>
+            </div>
+            <div class="card-body">
+                {% if category_data.labels %}
+                    <canvas id="categorySalesChart" height="250"></canvas>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                        <p>No sales data available for this period</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Sales Trend</h5>
+            </div>
+            <div class="card-body">
+                {% if time_series_data.labels %}
+                    <canvas id="salesTrendChart" height="250"></canvas>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p>No time-series data available for this period</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Top Selling Products</h5>
+            </div>
+            <div class="card-body">
+                {% if product_data.labels %}
+                    <canvas id="productSalesChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                        <p>No product sales data available for this period</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Inventory Projection</h5>
+            </div>
+            <div class="card-body">
+                {% if stock_data.products %}
+                    <canvas id="stockProjectionChart" height="300"></canvas>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                        <p>No inventory projection data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Unfulfilled Orders by Category</h5>
+            </div>
+            <div class="card-body">
+                {% if unfulfilled_data.categories %}
+                    <canvas id="unfulfilledChart" height="250"></canvas>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p>No unfulfilled orders. Great job!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Inventory Health</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if stock_vs_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Current Stock</th>
+                                    <th>Units Sold</th>
+                                    <th>Estimated Days Left</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in stock_vs_sales %}
+                                <tr>
+                                    <td>{{ item[0] }}</td>
+                                    <td>{{ item[1] }}</td>
+                                    <td>{{ item[2] }}</td>
+                                    <td>{% if item[3] is not none %}{{ "%.1f"|format(item[3]) }}{% else %}N/A{% endif %}</td>
+                                    <td>
+                                        {% if item[3] is not none %}
+                                            {% if item[3] < 7 %}
+                                                <span class="badge bg-danger">Critical</span>
+                                            {% elif item[3] < 14 %}
+                                                <span class="badge bg-warning text-dark">Low</span>
+                                            {% elif item[3] < 30 %}
+                                                <span class="badge bg-info">Adequate</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Healthy</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">No sales data</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-heart-broken fa-3x text-muted mb-3"></i>
+                        <p>No inventory health data available</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Top Products Performance</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if product_sales %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Units Sold</th>
+                                    <th>Total Sales</th>
+                                    <th>Orders</th>
+                                    <th>Avg. Sale Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in product_sales %}
+                                <tr>
+                                    <td>{{ item[0] }}</td>
+                                    <td>{{ item[1] }}</td>
+                                    <td>{{ item[2] }}</td>
+                                    <td>${{ "%.2f"|format(item[3]) }}</td>
+                                    <td>{{ item[4] }}</td>
+                                    <td>${{ "%.2f"|format(item[3] / item[2]) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center p-5">
+                        <i class="fas fa-table fa-3x text-muted mb-3"></i>
+                        <p>No product performance data available for this period</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart.js defaults
+    Chart.defaults.font.family = "'Poppins', 'Helvetica', 'Arial', sans-serif";
+    Chart.defaults.font.size = 13;
+    Chart.defaults.plugins.legend.position = 'bottom';
+    Chart.defaults.plugins.tooltip.padding = 10;
+    Chart.defaults.plugins.tooltip.boxPadding = 6;
+
+    // Category Sales Chart
+    {% if category_data.labels %}
+    const categorySalesCtx = document.getElementById('categorySalesChart').getContext('2d');
+    const categorySalesChart = new Chart(categorySalesCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ category_data.labels|tojson }},
+            datasets: [{
+                data: {{ category_data.sales|tojson }},
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#5a5c69', '#6f42c1', '#20c9a6', '#2c9faf', '#fd7e14'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.raw || 0;
+                            return label + ': $' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Sales Trend Chart
+    {% if time_series_data.labels %}
+    const salesTrendCtx = document.getElementById('salesTrendChart').getContext('2d');
+    const salesTrendChart = new Chart(salesTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ time_series_data.labels|tojson }},
+            datasets: [{
+                label: 'Sales ($)',
+                data: {{ time_series_data.sales|tojson }},
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 3,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                fill: true
+            }, {
+                label: 'Units Sold',
+                data: {{ time_series_data.quantities|tojson }},
+                backgroundColor: 'rgba(28, 200, 138, 0.05)',
+                borderColor: 'rgba(28, 200, 138, 1)',
+                borderWidth: 3,
+                pointRadius: 3,
+                pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                pointBorderColor: 'rgba(28, 200, 138, 1)',
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: 'rgba(28, 200, 138, 1)',
+                pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                pointHitRadius: 10,
+                pointBorderWidth: 2,
+                fill: false,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Sales Amount ($)'
+                    },
+                    grid: {
+                        borderDash: [2, 2],
+                        drawBorder: false
+                    }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Units Sold'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Product Sales Chart
+    {% if product_data.labels %}
+    const productSalesCtx = document.getElementById('productSalesChart').getContext('2d');
+    const productSalesChart = new Chart(productSalesCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ product_data.labels|tojson }},
+            datasets: [{
+                label: 'Sales ($)',
+                data: {{ product_data.sales|tojson }},
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Sales Amount ($)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Product'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.raw || 0;
+                            let index = context.dataIndex;
+                            let quantity = {{ product_data.quantities|tojson }}[index];
+                            return ['Sales: $' + value.toFixed(2), 'Units Sold: ' + quantity];
+                        },
+                        afterLabel: function(context) {
+                            let index = context.dataIndex;
+                            let category = {{ product_data.categories|tojson }}[index];
+                            return 'Category: ' + category;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Stock Projection Chart
+    {% if stock_data.products %}
+    const stockProjectionCtx = document.getElementById('stockProjectionChart').getContext('2d');
+    const stockData = {
+        labels: {{ stock_data.products|tojson }},
+        datasets: [{
+            label: 'Current Stock',
+            data: {{ stock_data.current_stock|tojson }},
+            backgroundColor: 'rgba(28, 200, 138, 0.8)',
+            borderWidth: 0
+        }, {
+            label: 'Units Sold (Period)',
+            data: {{ stock_data.units_sold|tojson }},
+            backgroundColor: 'rgba(54, 185, 204, 0.8)',
+            borderWidth: 0
+        }]
+    };
+
+    const stockProjectionChart = new Chart(stockProjectionCtx, {
+        type: 'bar',
+        data: stockData,
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            let index = context.dataIndex;
+                            let daysLeft = {{ stock_data.days_left|tojson }}[index];
+                            if (daysLeft !== null) {
+                                let status = daysLeft < 7 ? 'Critical' :
+                                            daysLeft < 14 ? 'Low' :
+                                            daysLeft < 30 ? 'Adequate' : 'Healthy';
+                                return 'Est. Days Left: ' + daysLeft.toFixed(1) + ' (' + status + ')';
+                            }
+                            return 'No sales data available';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // Unfulfilled Orders Chart
+    {% if unfulfilled_data.categories %}
+    const unfulfilledCtx = document.getElementById('unfulfilledChart').getContext('2d');
+    const unfulfilledChart = new Chart(unfulfilledCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ unfulfilled_data.categories|tojson }},
+            datasets: [{
+                data: {{ unfulfilled_data.counts|tojson }},
+                backgroundColor: [
+                    '#e74a3b', '#f6c23e', '#36b9cc', '#4e73df', '#1cc88a',
+                    '#5a5c69', '#6f42c1', '#20c9a6', '#2c9faf', '#fd7e14'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            let value = context.raw || 0;
+                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            let percentage = Math.round((value / total) * 100);
+                            return label + ': ' + value + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

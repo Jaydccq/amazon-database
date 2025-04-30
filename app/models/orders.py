@@ -273,3 +273,119 @@ class Order:
 
         result = app.db.execute(query, **params)
         return result[0][0] if result else 0
+
+    @staticmethod
+    def get_filtered_orders(buyer_id, search_query=None, seller_id=None, product_id=None,
+                            from_date=None, to_date=None, status=None,
+                            sort_by='date', sort_order='desc', limit=100, offset=0):
+        """Get filtered orders for a buyer"""
+
+        # Start building the query
+        query = '''
+            SELECT DISTINCT o.order_id, o.buyer_id, o.total_amount, o.order_date, 
+                   o.num_products, o.order_status, CONCAT(a.first_name, ' ', a.last_name) AS buyer_name, 
+                   a.address
+            FROM Orders o
+            JOIN Accounts a ON o.buyer_id = a.user_id
+        '''
+
+        # Add necessary joins based on filters
+        if search_query or product_id or seller_id:
+            query += ' JOIN Orders_Products op ON o.order_id = op.order_id'
+
+        if search_query or product_id:
+            query += ' JOIN Products p ON op.product_id = p.product_id'
+
+        if search_query or seller_id:
+            query += ' JOIN Accounts s ON op.seller_id = s.user_id'
+
+        # Where clause
+        query += ' WHERE o.buyer_id = :buyer_id'
+
+        # Initialize parameters dictionary
+        params = {'buyer_id': buyer_id}
+
+        # Add filter conditions
+        if search_query:
+            query += ''' AND (
+                p.product_name ILIKE :search_query OR
+                CONCAT(s.first_name, ' ', s.last_name) ILIKE :search_query
+            )'''
+            params['search_query'] = f'%{search_query}%'
+
+        if seller_id:
+            query += ' AND op.seller_id = :seller_id'
+            params['seller_id'] = seller_id
+
+        if product_id:
+            query += ' AND op.product_id = :product_id'
+            params['product_id'] = product_id
+
+        if from_date:
+            query += ' AND o.order_date >= :from_date'
+            params['from_date'] = from_date
+
+        if to_date:
+            query += ' AND o.order_date <= :to_date'
+            params['to_date'] = to_date
+
+        if status:
+            query += ' AND o.order_status = :status'
+            params['status'] = status
+
+        # Add sorting
+        if sort_by == 'price':
+            query += ' ORDER BY o.total_amount'
+        elif sort_by == 'status':
+            query += ' ORDER BY o.order_status'
+        else:  # default to date
+            query += ' ORDER BY o.order_date'
+
+        # Add sort direction
+        query += ' DESC' if sort_order == 'desc' else ' ASC'
+
+        # Add pagination
+        query += ' LIMIT :limit OFFSET :offset'
+        params['limit'] = limit
+        params['offset'] = offset
+
+        # Execute query
+        rows = app.db.execute(query, **params)
+
+        # Process results
+        orders = []
+        for row in rows:
+            order = Order(*row)
+            # Get items for each order
+            order.items = OrderItem.get_for_order(order.order_id)
+            orders.append(order)
+
+        return orders
+
+    @staticmethod
+    def get_sellers_for_buyer(buyer_id):
+        """Get list of sellers that the buyer has ordered from"""
+        rows = app.db.execute('''
+            SELECT DISTINCT s.user_id, CONCAT(s.first_name, ' ', s.last_name) AS seller_name
+            FROM Orders o
+            JOIN Orders_Products op ON o.order_id = op.order_id
+            JOIN Accounts s ON op.seller_id = s.user_id
+            WHERE o.buyer_id = :buyer_id
+            ORDER BY seller_name
+        ''', buyer_id=buyer_id)
+
+        return [{'id': row[0], 'name': row[1]} for row in rows]
+
+    @staticmethod
+    def get_products_for_buyer(buyer_id):
+        """Get list of products that the buyer has ordered"""
+        rows = app.db.execute('''
+            SELECT DISTINCT p.product_id, p.product_name
+            FROM Orders o
+            JOIN Orders_Products op ON o.order_id = op.order_id
+            JOIN Products p ON op.product_id = p.product_id
+            WHERE o.buyer_id = :buyer_id
+            ORDER BY p.product_name
+        ''', buyer_id=buyer_id)
+
+        return [{'id': row[0], 'name': row[1]} for row in rows]

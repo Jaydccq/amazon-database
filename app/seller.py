@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-from flask import flash, session, current_app, jsonify
+from flask import flash, session, current_app, jsonify, app
 from functools import wraps
 from werkzeug.utils import secure_filename
 import os
@@ -446,3 +446,158 @@ def fulfill_item(order_item_id):
         return redirect(url_for('seller.order_details', order_id=item.order_id))
     else:
         return redirect(url_for('seller.orders'))
+
+
+# Add this to your seller.py file
+
+@bp.route('/analytics')
+@seller_required
+def product_analytics():
+    """Product analytics dashboard for sellers"""
+    user_id = session['user_id']
+
+    # Get date ranges for filtering
+    from datetime import datetime, timedelta
+    today = datetime.now()
+
+    # Default is last 30 days
+    days = request.args.get('days', 30, type=int)
+    start_date = today - timedelta(days=days)
+
+    # Get sales data by category
+    category_sales = current_app.db.execute('''
+        SELECT pc.category_name, SUM(op.quantity) as sold_quantity, 
+            SUM(op.quantity * op.price) as total_sales,
+            COUNT(DISTINCT o.order_id) as order_count
+        FROM Orders_Products op
+        JOIN Orders o ON op.order_id = o.order_id
+        JOIN Products p ON op.product_id = p.product_id
+        JOIN Products_Categories pc ON p.category_id = pc.category_id
+        WHERE op.seller_id = :seller_id
+        AND o.order_date >= :start_date
+        GROUP BY pc.category_name
+        ORDER BY total_sales DESC
+    ''', seller_id=user_id, start_date=start_date)
+
+    # Get sales data by product
+    product_sales = current_app.db.execute('''
+        SELECT p.product_name, pc.category_name,
+            SUM(op.quantity) as sold_quantity, 
+            SUM(op.quantity * op.price) as total_sales,
+            COUNT(DISTINCT o.order_id) as order_count
+        FROM Orders_Products op
+        JOIN Orders o ON op.order_id = o.order_id
+        JOIN Products p ON op.product_id = p.product_id
+        JOIN Products_Categories pc ON p.category_id = pc.category_id
+        WHERE op.seller_id = :seller_id
+        AND o.order_date >= :start_date
+        GROUP BY p.product_name, pc.category_name
+        ORDER BY total_sales DESC
+        LIMIT 10
+    ''', seller_id=user_id, start_date=start_date)
+
+    # Get sales trend over time (by day/week depending on date range)
+    if days <= 30:
+        # Daily data for shorter periods
+        time_series = current_app.db.execute('''
+            SELECT DATE(o.order_date) as date, 
+                SUM(op.quantity) as sold_quantity,
+                SUM(op.quantity * op.price) as total_sales
+            FROM Orders_Products op
+            JOIN Orders o ON op.order_id = o.order_id
+            WHERE op.seller_id = :seller_id
+            AND o.order_date >= :start_date
+            GROUP BY DATE(o.order_date)
+            ORDER BY date
+        ''', seller_id=user_id, start_date=start_date)
+    else:
+        # Weekly data for longer periods
+        time_series = current_app.db.execute('''
+            SELECT DATE_TRUNC('week', o.order_date) as week_start,
+                SUM(op.quantity) as sold_quantity,
+                SUM(op.quantity * op.price) as total_sales
+            FROM Orders_Products op
+            JOIN Orders o ON op.order_id = o.order_id
+            WHERE op.seller_id = :seller_id
+            AND o.order_date >= :start_date
+            GROUP BY week_start
+            ORDER BY week_start
+        ''', seller_id=user_id, start_date=start_date)
+
+    # Get inventory status vs. sales rate (to identify potential stock issues)
+    stock_vs_sales = current_app.db.execute('''
+        SELECT p.product_name, i.quantity as current_stock,
+            COALESCE(SUM(op.quantity), 0) as units_sold,
+            CASE 
+                WHEN COALESCE(SUM(op.quantity), 0) = 0 THEN NULL
+                ELSE i.quantity::float / (SUM(op.quantity)::float / :days)
+            END as days_of_stock_left
+        FROM Inventory i
+        JOIN Products p ON i.product_id = p.product_id
+        LEFT JOIN Orders_Products op ON i.product_id = op.product_id
+            AND op.seller_id = i.seller_id
+            AND op.order_id IN (
+                SELECT order_id FROM Orders 
+                WHERE order_date >= :start_date
+            )
+        WHERE i.seller_id = :seller_id
+        GROUP BY p.product_name, i.quantity
+        ORDER BY days_of_stock_left ASC NULLS LAST
+        LIMIT 10
+    ''', seller_id=user_id, start_date=start_date, days=days)
+
+    # Get unfulfilled order count by category
+    unfulfilled_by_category = current_app.db.execute('''
+        SELECT pc.category_name, COUNT(*) as unfulfilled_count
+        FROM Orders_Products op
+        JOIN Products p ON op.product_id = p.product_id
+        JOIN Products_Categories pc ON p.category_id = pc.category_id
+        WHERE op.seller_id = :seller_id
+        AND op.status = 'Unfulfilled'
+        GROUP BY pc.category_name
+        ORDER BY unfulfilled_count DESC
+    ''', seller_id=user_id)
+
+    # Format data for charts
+    category_data = {
+        'labels': [row[0] for row in category_sales],
+        'quantities': [row[1] for row in category_sales],
+        'sales': [float(row[2]) for row in category_sales]
+    }
+
+    time_series_data = {
+        'labels': [row[0].strftime('%Y-%m-%d') if hasattr(row[0], 'strftime') else str(row[0]) for row in time_series],
+        'quantities': [row[1] for row in time_series],
+        'sales': [float(row[2]) for row in time_series]
+    }
+
+    product_data = {
+        'labels': [row[0] for row in product_sales],
+        'categories': [row[1] for row in product_sales],
+        'quantities': [row[2] for row in product_sales],
+        'sales': [float(row[3]) for row in product_sales]
+    }
+
+    stock_data = {
+        'products': [row[0] for row in stock_vs_sales],
+        'current_stock': [row[1] for row in stock_vs_sales],
+        'units_sold': [row[2] for row in stock_vs_sales],
+        'days_left': [float(row[3]) if row[3] is not None else None for row in stock_vs_sales]
+    }
+
+    unfulfilled_data = {
+        'categories': [row[0] for row in unfulfilled_by_category],
+        'counts': [row[1] for row in unfulfilled_by_category]
+    }
+
+    return render_template(
+        'seller/analytics.html',
+        days=days,
+        category_data=category_data,
+        time_series_data=time_series_data,
+        product_data=product_data,
+        stock_data=stock_data,
+        unfulfilled_data=unfulfilled_data,
+        product_sales=product_sales,
+        stock_vs_sales=stock_vs_sales
+    )

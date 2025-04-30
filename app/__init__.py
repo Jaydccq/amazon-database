@@ -2,7 +2,7 @@ from flask import Flask
 from flask_login import LoginManager
 from .config import Config
 from .db import DB
-
+import logging
 
 
 login = LoginManager()
@@ -19,6 +19,11 @@ def create_app():
 
     app.db = DB(app)
     login.init_app(app)
+
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s'
+    )
 
     from .index import bp as index_bp
     app.register_blueprint(index_bp)

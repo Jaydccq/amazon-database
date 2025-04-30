@@ -1,6 +1,7 @@
 # index.py
-from flask import render_template, request
+from flask import render_template, request, flash, app, redirect, url_for
 from flask_login import login_required, current_user
+from .models.orders import OrderItem
 import datetime
 
 from .models.orders import Order
@@ -93,7 +94,218 @@ def index():
 @bp.route('/purchase-history')
 @login_required
 def purchase_history():
-    orders = Order.get_for_buyer(current_user.id, limit=100)
-    return render_template('purchase_history.html', orders=orders)
+    # Get filter parameters from request
+    search_query = request.args.get('search', '')
+    seller_id = request.args.get('seller_id', type=int)
+    product_id = request.args.get('product_id', type=int)
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    status = request.args.get('status', '')
+    sort_by = request.args.get('sort_by', 'date')
+    sort_order = request.args.get('sort_order', 'desc')
+
+    # Convert date strings to datetime objects if they exist
+    from_date = None
+    to_date = None
+    if date_from:
+        try:
+            from_date = datetime.strptime(date_from, '%Y-%m-%d')
+        except ValueError:
+            flash('Invalid from date format. Please use YYYY-MM-DD', 'error')
+
+    if date_to:
+        try:
+            to_date = datetime.strptime(date_to, '%Y-%m-%d')
+            # Set time to end of day
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+        except ValueError:
+            flash('Invalid to date format. Please use YYYY-MM-DD', 'error')
+
+    # Get orders with filters
+    orders = Order.get_filtered_orders(
+        buyer_id=current_user.id,
+        search_query=search_query,
+        seller_id=seller_id,
+        product_id=product_id,
+        from_date=from_date,
+        to_date=to_date,
+        status=status,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+
+    # Get list of sellers and products for filter dropdowns
+    sellers = []
+    products = []
+
+    # Only fetch these if user has orders
+    if orders:
+        sellers = Order.get_sellers_for_buyer(current_user.id)
+        products = Order.get_products_for_buyer(current_user.id)
+
+    return render_template(
+        'purchase_history.html',
+        orders=orders,
+        sellers=sellers,
+        products=products,
+        filters={
+            'search': search_query,
+            'seller_id': seller_id,
+            'product_id': product_id,
+            'date_from': from_date,
+            'date_to': to_date,
+            'status': status,
+            'sort_by': sort_by,
+            'sort_order': sort_order
+        }
+    )
+
+# 2. Now add the necessary methods to the Order class in orders.py
+
+# Add these methods to the Order class in orders.py
+@staticmethod
+def get_filtered_orders(buyer_id, search_query=None, seller_id=None, product_id=None,
+                        from_date=None, to_date=None, status=None,
+                        sort_by='date', sort_order='desc'):
+    """Get filtered orders for a buyer"""
+
+    # Start building the query
+    query = '''
+        SELECT DISTINCT o.order_id, o.buyer_id, o.total_amount, o.order_date, 
+               o.num_products, o.order_status, CONCAT(a.first_name, ' ', a.last_name) AS buyer_name, 
+               a.address
+        FROM Orders o
+        JOIN Orders_Products op ON o.order_id = op.order_id
+        JOIN Products p ON op.product_id = p.product_id
+        JOIN Accounts a ON o.buyer_id = a.user_id
+        JOIN Accounts s ON op.seller_id = s.user_id
+        WHERE o.buyer_id = :buyer_id
+    '''
+
+    # Initialize parameters dictionary
+    params = {'buyer_id': buyer_id}
+
+    # Add filter conditions
+    if search_query:
+        query += ''' AND (
+            p.product_name ILIKE :search_query OR
+            CONCAT(s.first_name, ' ', s.last_name) ILIKE :search_query
+        )'''
+        params['search_query'] = f'%{search_query}%'
+
+    if seller_id:
+        query += ' AND op.seller_id = :seller_id'
+        params['seller_id'] = seller_id
+
+    if product_id:
+        query += ' AND op.product_id = :product_id'
+        params['product_id'] = product_id
+
+    if from_date:
+        query += ' AND o.order_date >= :from_date'
+        params['from_date'] = from_date
+
+    if to_date:
+        query += ' AND o.order_date <= :to_date'
+        params['to_date'] = to_date
+
+    if status:
+        query += ' AND o.order_status = :status'
+        params['status'] = status
+
+    # Add sorting
+    if sort_by == 'price':
+        query += ' ORDER BY o.total_amount'
+    elif sort_by == 'status':
+        query += ' ORDER BY o.order_status'
+    else:  # default to date
+        query += ' ORDER BY o.order_date'
+
+    # Add sort direction
+    query += ' DESC' if sort_order == 'desc' else ' ASC'
+
+    # Execute query
+    rows = app.db.execute(query, **params)
+
+    # Process results
+    orders = []
+    for row in rows:
+        order = Order(*row)
+        # Get items for each order
+        order.items = OrderItem.get_for_order(order.order_id)
+        orders.append(order)
+
+    return orders
 
 
+@staticmethod
+def get_sellers_for_buyer(buyer_id):
+    """Get list of sellers that the buyer has ordered from"""
+    rows = app.db.execute('''
+        SELECT DISTINCT s.user_id, CONCAT(s.first_name, ' ', s.last_name) AS seller_name
+        FROM Orders o
+        JOIN Orders_Products op ON o.order_id = op.order_id
+        JOIN Accounts s ON op.seller_id = s.user_id
+        WHERE o.buyer_id = :buyer_id
+        ORDER BY seller_name
+    ''', buyer_id=buyer_id)
+
+    return [{'id': row[0], 'name': row[1]} for row in rows]
+
+
+@staticmethod
+def get_products_for_buyer(buyer_id):
+    """Get list of products that the buyer has ordered"""
+    rows = app.db.execute('''
+        SELECT DISTINCT p.product_id, p.product_name
+        FROM Orders o
+        JOIN Orders_Products op ON o.order_id = op.order_id
+        JOIN Products p ON op.product_id = p.product_id
+        WHERE o.buyer_id = :buyer_id
+        ORDER BY p.product_name
+    ''', buyer_id=buyer_id)
+
+    return [{'id': row[0], 'name': row[1]} for row in rows]
+
+
+@bp.route('/order/<int:order_id>')
+@login_required
+def view_order_details(order_id):
+    # Get the order
+    order = Order.get(order_id)
+
+    # Check if order exists and belongs to the current user
+    if not order or order.buyer_id != current_user.id:
+        flash('Order not found or you do not have permission to view it', 'error')
+        return redirect(url_for('index.purchase_history'))
+
+    # Group items by seller
+    sellers = {}
+    for item in order.items:
+        if item.seller_id not in sellers:
+            sellers[item.seller_id] = {
+                'id': item.seller_id,
+                'name': item.seller_name,
+                'products': [],  # Changed from 'items' to 'products'
+                'subtotal': 0,
+                'status': 'Fulfilled'  # Will be set to 'Unfulfilled' if any item is unfulfilled
+            }
+
+        # Add item to seller group
+        sellers[item.seller_id]['products'].append(item)  # Changed from 'items' to 'products'
+
+        # Add to seller subtotal
+        sellers[item.seller_id]['subtotal'] += item.get_subtotal()
+
+        # Update seller group status
+        if item.status == 'Unfulfilled':
+            sellers[item.seller_id]['status'] = 'Unfulfilled'
+
+    # Convert to list for template
+    seller_groups = list(sellers.values())
+
+    return render_template(
+        'order_details.html',
+        order=order,
+        seller_groups=seller_groups
+    )

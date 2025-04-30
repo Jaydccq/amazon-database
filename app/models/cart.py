@@ -1,10 +1,16 @@
 from flask import current_app as app
 from datetime import datetime
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Cart:
     @staticmethod
     def add_to_cart(user_id, product_id, seller_id, quantity):
         try:
+
+            # logger.info("Get cart for user_id: %s ...", user_id)
             cart_rows = app.db.execute('''
             SELECT cart_id FROM Carts 
             WHERE user_id = :user_id
@@ -23,6 +29,7 @@ class Cart:
 
             cart_id = cart_rows[0][0]
 
+            # logger.info("Get price for price_rows...")
             price_rows = app.db.execute('''
             SELECT unit_price FROM Inventory
             WHERE product_id = :product_id AND seller_id = :seller_id
@@ -32,6 +39,7 @@ class Cart:
                 return None
 
             unit_price = price_rows[0][0]
+
 
             result = app.db.execute('''
             INSERT INTO Cart_Products (cart_id, product_id, seller_id, quantity, price_at_addition, added_at)
@@ -80,6 +88,7 @@ class Cart:
     @staticmethod
     def checkout_cart(user_id):
         try:
+            logger.info("Get cart for user_id: %s ...", user_id)
             cart_rows = app.db.execute('''
                     SELECT cart_id FROM Carts WHERE user_id = :user_id
                 ''', user_id=user_id)
@@ -88,7 +97,7 @@ class Cart:
                 return False, "cart does not exist"
 
             cart_id = cart_rows[0][0]
-
+            logger.info("Get cart items for cart_id: %s ...", cart_id)
             cart_items = app.db.execute('''
                 SELECT 
                     cp.product_id, 
@@ -104,6 +113,8 @@ class Cart:
             if not cart_items:
                 return False, "your cart is empty"
 
+            # Check if all items are available in the inventory
+            logger.info("Check inventory for cart items...")
             insufficient_items = []
             for item in cart_items:
                 if item[2] > item[4]:
@@ -119,6 +130,7 @@ class Cart:
             total_amount = sum(item[2] * item[3] for item in cart_items)
 
             # Check if user has enough balance
+            logger.info("Check user balance...")
             user_balance = app.db.execute('''
                 SELECT current_balance FROM Accounts WHERE user_id = :user_id
                 ''', user_id=user_id)[0][0]
@@ -126,6 +138,8 @@ class Cart:
             if user_balance < total_amount:
                 return False, f"Insufficient balance. Required: ${total_amount:.2f}, Current balance: ${user_balance:.2f}"
 
+
+            logger.info("Begin transaction for checkout...")
             app.db.execute('BEGIN')
 
             sellers_items = {}
@@ -184,7 +198,7 @@ class Cart:
 
             app.db.execute('COMMIT')
 
-            return True, order_ids
+            return True, "Success Checkout"
 
         except Exception as e:
             app.db.execute('ROLLBACK')
