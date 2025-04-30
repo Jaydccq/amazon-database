@@ -259,6 +259,8 @@ CREATE INDEX idx_orders_products_seller_status ON Orders_Products(seller_id, sta
 
 CREATE INDEX idx_orders_date_amount ON Orders(order_date DESC, total_amount);
 
+CREATE UNIQUE INDEX IF NOT EXISTS rv_uid_rid_idx
+ON ReviewVotes (user_id, review_id);
 
 CREATE INDEX idx_inventory_low_stock ON Inventory(seller_id, quantity) WHERE quantity < 10;
 

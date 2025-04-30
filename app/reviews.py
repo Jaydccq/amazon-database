@@ -9,7 +9,7 @@ from .models.product import Product
 # Import the app instance
 bp = Blueprint('reviews', __name__)
 
-
+from flask import current_app as app
 @bp.route('/user-reviews')
 @login_required
 def user_reviews_page(): # Display user's own reviews
@@ -231,36 +231,34 @@ def seller_reviews(seller_id): # Display seller reviews page
 
 
 @bp.route('/reviews/vote/<int:review_id>', methods=['POST'])
-@login_required  # login required
-def vote_review(review_id):  # handle vote request
-    vote_type = request.form.get('vote_type', type=int)  # get vote type
+@login_required
+def vote_review(review_id):
+    # Get vote type from form data and convert to integer
+    vote_type = request.form.get('vote_type', type=int)
 
-    # validate vote type
+    # Validate vote type (must be 1 for upvote or -1 for downvote)
     if vote_type not in [1, -1]:
         return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
 
-    # check review existence
+    # Check if review exists
     review = Review.get(review_id)
     if not review:
         return jsonify({'success': False, 'error': 'Review not found'}), 404
 
-    # prevent self-voting
+    # Prevent self-voting (users cannot vote their own reviews)
     if review.user_id == current_user.id:
-        return jsonify({'success': False, 'error': 'Cannot vote own review'}), 403
+        return jsonify({'success': False, 'error': 'Cannot vote on your own review'}), 403
 
     try:
-        # add vote to DB
+        # Process the vote and get the result
         result = Review.add_vote(current_user.id, review_id, vote_type)
-
-        # log vote action
-        app.logger.info(
-            f"Vote added: user_id={current_user.id}, review_id={review_id}, vote_type={vote_type}, result={result}")
-
-        return jsonify(result)  # return result
+        app.logger.info(f"Vote added for review {review_id}: {result}")
+        return jsonify(result)
     except ValueError as e:
-        # handle validation error
+        # Handle validation errors
+        app.logger.warning(f"Vote validation error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
     except Exception as e:
-        app.logger.error(f"Vote error: {e}")  # log unexpected error
-        # return server error
+        # Handle unexpected errors
+        app.logger.error(f"Vote error for review {review_id}: {e}", exc_info=True)
         return jsonify({'success': False, 'error': 'Server error occurred'}), 500

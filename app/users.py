@@ -122,3 +122,24 @@ def topup():
 def profile():
     return render_template('profile.html', user=current_user)
 
+@bp.route('/become-seller', methods=['GET', 'POST']) # Allow POST if using a form, GET if just a link
+@login_required
+def become_seller():
+    """Route to handle a user becoming a seller."""
+    if current_user.is_seller:
+        flash('You are already a seller!')
+        return redirect(url_for('users.profile'))
+
+
+    # Update database
+    if User.make_seller(current_user.id):
+        # Update the current_user object in the session
+        current_user.is_seller = True
+        # Optional: Update Flask session variable if you use it elsewhere
+        # from flask import session
+        # session['is_seller'] = True
+        flash('Congratulations! You are now registered as a seller.', 'success')
+    else:
+        flash('An error occurred while updating your account. Please try again.', 'danger')
+
+    return redirect(url_for('users.profile'))

@@ -1,187 +1,267 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="container mt-4">
-
+<div class="container py-5">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
                 {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             {% endfor %}
         {% endif %}
     {% endwith %}
 
-    <h1>Shopping Cart</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold text-primary">
+            <i class="fas fa-shopping-cart me-2"></i> Your Shopping Cart
+        </h1>
+        <a href="{{ url_for('index.index') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-1"></i> Continue Shopping
+        </a>
+    </div>
 
-    {# --- In Cart Items Section --- #}
+    <!-- Cart Items Section -->
     {% if in_cart_items %}
-        <div class="table-responsive mb-5">
-            <table class="table table-hover align-middle"> {# Added align-middle for better vertical alignment #}
-                <thead class="thead-dark">
-                    <tr>
-                        <th style="width: 40%;">Product</th>
-                        <th>Seller</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Total</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in in_cart_items %}
-                    {# item format: [product_id, seller_id, quantity, product_name, description, image, unit_price, total_price, seller_name, owner_id, status] #}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                {# Placeholder for image if you add it later
-                                <img src="{{ item[5] or url_for('static', filename='images/placeholder.png') }}" alt="{{ item[3] }}" class="img-thumbnail mr-3" style="width: 60px; height: 60px; object-fit: cover;">
-                                #}
-                                <div>
-                                    <h6>{{ item[3] }}</h6> {# product_name #}
-                                    <small class="text-muted">{{ item[4]|truncate(50) }}</small> {# description #}
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ item[8] }}</td> {# seller_name #}
-                        <td>${{ "%.2f"|format(item[6]) }}</td> {# unit_price #}
-                        <td>
-                            {# Update Quantity Form #}
-                            <form action="{{ url_for('cart.update_cart') }}" method="POST" class="form-inline">
-                                <input type="hidden" name="product_id" value="{{ item[0] }}">
-                                <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                <input type="number" name="quantity" value="{{ item[2] }}" min="1" class="form-control form-control-sm mr-2" style="width: 70px;">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Update quantity"><i class="fas fa-sync-alt"></i></button>
-                            </form>
-                        </td>
-                        <td><strong>${{ "%.2f"|format(item[7]) }}</strong></td> {# total_price #}
-                        <td>
-                            {# Action Buttons: Save for Later & Remove #}
-                             <div class="d-flex">
-                                <form action="{{ url_for('cart.save_for_later') }}" method="POST" class="mr-1">
-                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
-                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Save for Later">
-                                        <i class="fas fa-save"></i> <span class="d-none d-md-inline">Save</span> {# Hide text on small screens #}
-                                    </button>
-                                </form>
-                                <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
-                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
-                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove from cart">
-                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Remove</span> {# Hide text on small screens #}
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4" class="text-right"><strong>Subtotal:</strong></td>
-                        <td><strong>${{ "%.2f"|format(total_cart_value) }}</strong></td>
-                        <td></td> {# Empty cell for alignment #}
-                    </tr>
-                </tfoot>
-            </table>
+        <div class="card border-0 shadow-sm mb-5">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="fas fa-shopping-basket me-2"></i> Cart Items ({{ in_cart_items|length }})</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3" style="width: 40%;">Product</th>
+                                <th class="py-3">Seller</th>
+                                <th class="py-3">Price</th>
+                                <th class="py-3">Quantity</th>
+                                <th class="py-3">Total</th>
+                                <th class="py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in in_cart_items %}
+                            <tr class="cart-item">
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded p-2 me-3 d-none d-md-block">
+                                            <i class="fas fa-box fa-2x text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">{{ item[3] }}</h6>
+                                            <p class="text-muted small mb-0">{{ item[4]|truncate(50) }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fas fa-store me-1"></i> {{ item[8] }}
+                                    </span>
+                                </td>
+                                <td class="py-3 fw-bold text-primary">${{ "%.2f"|format(item[6]) }}</td>
+                                <td class="py-3">
+                                    <form action="{{ url_for('cart.update_cart') }}" method="POST" class="quantity-form">
+                                        <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                        <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                        <div class="input-group input-group-sm quantity-control">
+                                            <input type="number" name="quantity" value="{{ item[2] }}" min="1"
+                                                   class="form-control" style="max-width: 70px;">
+                                            <button type="submit" class="btn btn-outline-primary">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td class="py-3 fw-bold">${{ "%.2f"|format(item[7]) }}</td>
+                                <td class="py-3 text-center">
+                                    <div class="btn-group">
+                                        <form action="{{ url_for('cart.save_for_later') }}" method="POST">
+                                            <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                            <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-info me-1"
+                                                    data-bs-toggle="tooltip" title="Save for Later">
+                                                <i class="fas fa-bookmark"></i>
+                                                <span class="d-none d-lg-inline ms-1">Save</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
+                                            <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                            <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="tooltip" title="Remove item">
+                                                <i class="fas fa-trash-alt"></i>
+                                                <span class="d-none d-lg-inline ms-1">Remove</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted">Total ({{ in_cart_items|length }} items):</span>
+                        <span class="h4 ms-2 mb-0 text-success">${{ "%.2f"|format(total_cart_value) }}</span>
+                    </div>
+                    <form method="POST" action="{{ url_for('cart.checkout') }}">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-credit-card me-2"></i> Checkout
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        {# Checkout Button - Only show if items are in the cart #}
-        <div class="mt-4 d-flex justify-content-between align-items-center">
-            <a href="{{ url_for('index.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Continue Shopping
-            </a>
-            <form method="POST" action="{{ url_for('cart.checkout') }}">
-                <button type="submit" class="btn btn-success btn-lg"> {# Larger button #}
-                    <i class="fas fa-shopping-cart"></i> Proceed to Checkout (${{ "%.2f"|format(total_cart_value) }})
-                </button>
-            </form>
-        </div>
-
     {% else %}
-        {# Message when the main cart is empty #}
-         <div class="alert alert-info text-center p-4">
-            <i class="fas fa-shopping-cart fa-2x mb-3"></i>
-            <h4>Your shopping cart is empty.</h4>
-            {% if not saved_items %} {# Only show if saved is also empty #}
-            <p>Add some items to get started!</p>
-            <a href="{{ url_for('index.index') }}" class="btn btn-primary mt-2">Browse Products</a>
-            {% endif %}
+        <!-- Empty Cart Message -->
+        <div class="card border-0 shadow-sm text-center py-5 mb-5">
+            <div class="card-body">
+                <div class="empty-cart-icon mb-3">
+                    <i class="fas fa-shopping-cart fa-4x text-muted"></i>
+                </div>
+                <h3 class="text-muted mb-4">Your shopping cart is empty</h3>
+                {% if not saved_items %}
+                    <p class="mb-4">Add some items to get started with your shopping!</p>
+                    <a href="{{ url_for('index.index') }}" class="btn btn-primary">
+                        <i class="fas fa-shopping-bag me-2"></i> Browse Products
+                    </a>
+                {% endif %}
+            </div>
         </div>
     {% endif %}
 
-
-    {# --- Saved For Later Section --- #}
+    <!-- Saved For Later Section -->
     {% if saved_items %}
-        <hr class="my-5"> {# Separator #}
-        <h2>Saved for Later ({{ saved_items|length }})</h2>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                 <thead class="thead-light"> {# Lighter header for this section #}
-                    <tr>
-                        <th style="width: 50%;">Product</th>
-                        <th>Seller</th>
-                        <th>Price When Added</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in saved_items %}
-                     {# item format: [product_id, seller_id, quantity, product_name, description, image, unit_price, total_price, seller_name, owner_id, status] #}
-                    <tr>
-                        <td>
-                             <div class="d-flex align-items-center">
-                                {# Placeholder for image
-                                <img src="{{ item[5] or url_for('static', filename='images/placeholder.png') }}" alt="{{ item[3] }}" class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                #}
-                                <div>
-                                    <h6>{{ item[3] }}</h6> {# product_name #}
-                                    <small class="text-muted">Quantity saved: {{ item[2] }}</small> {# Show saved quantity #}
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ item[8] }}</td> {# seller_name #}
-                        <td>${{ "%.2f"|format(item[6]) }}</td> {# unit_price (price_at_addition) #}
-                        <td>
-                             {# Action Buttons: Move to Cart & Remove #}
-                             <div class="d-flex">
-                                <form action="{{ url_for('cart.move_to_cart_route') }}" method="POST" class="mr-1">
-                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
-                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Move back to cart">
-                                        <i class="fas fa-cart-plus"></i> <span class="d-none d-md-inline">Move to Cart</span>
-                                    </button>
-                                </form>
-                                <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
-                                    <input type="hidden" name="product_id" value="{{ item[0] }}">
-                                    <input type="hidden" name="seller_id" value="{{ item[1] }}">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove permanently">
-                                        <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Remove</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-light py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-bookmark me-2"></i> Saved for Later ({{ saved_items|length }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3" style="width: 50%;">Product</th>
+                                <th class="py-3">Seller</th>
+                                <th class="py-3">Price</th>
+                                <th class="py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in saved_items %}
+                            <tr class="saved-item">
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded p-2 me-3 d-none d-md-block">
+                                            <i class="fas fa-box fa-2x text-secondary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">{{ item[3] }}</h6>
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-tag me-1"></i> Qty: {{ item[2] }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-light text-dark">
+                                        <i class="fas fa-store me-1"></i> {{ item[8] }}
+                                    </span>
+                                </td>
+                                <td class="py-3 fw-bold">${{ "%.2f"|format(item[6]) }}</td>
+                                <td class="py-3 text-center">
+                                    <div class="btn-group">
+                                        <form action="{{ url_for('cart.move_to_cart_route') }}" method="POST">
+                                            <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                            <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success me-1"
+                                                    data-bs-toggle="tooltip" title="Move to cart">
+                                                <i class="fas fa-cart-plus"></i>
+                                                <span class="d-none d-lg-inline ms-1">Move to Cart</span>
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('cart.remove_from_cart') }}" method="POST">
+                                            <input type="hidden" name="product_id" value="{{ item[0] }}">
+                                            <input type="hidden" name="seller_id" value="{{ item[1] }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="tooltip" title="Remove item">
+                                                <i class="fas fa-trash-alt"></i>
+                                                <span class="d-none d-lg-inline ms-1">Remove</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     {% endif %}
 
-    {# Message if both carts are empty #}
+    <!-- Both Empty Message -->
     {% if not in_cart_items and not saved_items %}
-        <div class="alert alert-info text-center p-5 mt-4">
-            <i class="fas fa-shopping-bag fa-3x mb-3"></i>
-            <h4>Your cart and saved items are empty.</h4>
-            <p>Start shopping to add items!</p>
-            <a href="{{ url_for('index.index') }}" class="btn btn-primary mt-2">Browse Products</a>
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm text-center p-5">
+                    <div class="card-body">
+                        <div class="empty-cart-animation mb-4">
+                            <i class="fas fa-shopping-bag fa-5x text-muted"></i>
+                        </div>
+                        <h3 class="mb-3">Your shopping cart and saved items are empty</h3>
+                        <p class="text-muted mb-4">Start shopping to add items to your cart or save them for later!</p>
+                        <a href="{{ url_for('index.index') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-store me-2"></i> Start Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     {% endif %}
+</div>
 
-</div> {# End container #}
+<style>
+    /* Custom Styles */
+    .cart-item, .saved-item {
+        transition: all 0.2s ease;
+    }
+
+    .cart-item:hover, .saved-item:hover {
+        background-color: rgba(0, 123, 255, 0.03);
+    }
+
+    .quantity-control {
+        max-width: 120px;
+    }
+
+    .empty-cart-icon, .empty-cart-animation {
+        color: #dee2e6;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+    }
+</style>
+
+<script>
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
 {% endblock %}

@@ -14,9 +14,10 @@ def product_detail(product_id):
         abort(404, description="Product not found")
 
     inventory_items = Inventory.get_sellers_for_product(product_id)
-
+    print(f"DEBUG: Original product.image from DB: {product.image}")
     product.inventory = inventory_items
     product.image = f"/static/uploads/{product.image}"
+    print(f"DEBUG: Original product.image from DB: {product.image}")
     print(product.image)
 
     reviews = Review.get_product_review(product_id)

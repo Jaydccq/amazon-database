@@ -1,6 +1,9 @@
 from flask import current_app as app
 from datetime import datetime
 from sqlalchemy import text
+
+
+
 class Review:
     # Initialize review object attributes
     def __init__(self, review_id, user_id, comment, review_date, product_id, seller_id, rating, upvotes, downvotes, user_vote=None):
@@ -232,139 +235,95 @@ class Review:
                               seller_id=seller_id)
         return rows[0] if rows and rows[0][0] is not None else (0.0, 0) # Handle no reviews case
 
-
     @staticmethod
-    def add_vote(user_id, review_id, vote_type):  # handle user vote
+    def add_vote(user_id, review_id, vote_type):
+        """Process user vote action"""
+        app.logger.debug(f"Starting vote process: user_id={user_id}, review_id={review_id}, vote_type={vote_type}")
+
         if vote_type not in [1, -1]:
-            raise ValueError("Invalid vote type")  # must be 1 or -1
+            raise ValueError("Invalid vote type")
 
-        try:
-            # begin DB transaction
-            conn = app.db.engine.begin()
-
-            # check existing vote
+        # Use a transaction to ensure all changes are atomic
+        with app.db.engine.begin() as conn:
+            # Check if vote already exists
             result = conn.execute(text('''
                 SELECT vote_type FROM ReviewVotes 
                 WHERE user_id = :user_id AND review_id = :review_id
             '''), {"user_id": user_id, "review_id": review_id})
+            existing = result.fetchone()
 
-            existing_vote = result.fetchone()
-            upvote_change = 0
-            downvote_change = 0
-            new_vote_status = None  # final vote state
+            up_delta = 0
+            down_delta = 0
+            new_status = None
 
-            if existing_vote:
-                existing_vote_type = existing_vote[0]
-                if existing_vote_type == vote_type:
-                    # same vote clicked: remove
+            if existing:
+                # Vote exists, check if it's the same type
+                old_vote_type = existing[0]
+                if old_vote_type == vote_type:
+                    # Same vote type, remove the vote
                     conn.execute(text('''
-                        DELETE FROM ReviewVotes 
+                        DELETE FROM ReviewVotes
                         WHERE user_id = :user_id AND review_id = :review_id
                     '''), {"user_id": user_id, "review_id": review_id})
 
+                    # Update deltas based on removed vote
                     if vote_type == 1:
-                        upvote_change = -1
+                        up_delta = -1
                     else:
-                        downvote_change = -1
-                    new_vote_status = None
+                        down_delta = -1
+                    new_status = None
                 else:
-                    # change vote type
+                    # Different vote type, change the vote
                     conn.execute(text('''
-                        UPDATE ReviewVotes 
-                        SET vote_type = :vote_type, voted_at = CURRENT_TIMESTAMP 
+                        UPDATE ReviewVotes
+                        SET vote_type = :vote_type, voted_at = CURRENT_TIMESTAMP
                         WHERE user_id = :user_id AND review_id = :review_id
                     '''), {"vote_type": vote_type, "user_id": user_id, "review_id": review_id})
 
-                    if vote_type == 1:  # to upvote
-                        upvote_change = 1
-                        downvote_change = -1
-                    else:  # to downvote
-                        upvote_change = -1
-                        downvote_change = 1
-                    new_vote_status = vote_type
+                    # Update deltas based on changed vote
+                    if vote_type == 1:  # Changed to upvote
+                        up_delta = 1
+                        down_delta = -1
+                    else:  # Changed to downvote
+                        up_delta = -1
+                        down_delta = 1
+                    new_status = vote_type
             else:
-                # new vote: insert
+                # No existing vote, add a new one
                 conn.execute(text('''
-                    INSERT INTO ReviewVotes (user_id, review_id, vote_type, voted_at) 
+                    INSERT INTO ReviewVotes (user_id, review_id, vote_type, voted_at)
                     VALUES (:user_id, :review_id, :vote_type, CURRENT_TIMESTAMP)
                 '''), {"user_id": user_id, "review_id": review_id, "vote_type": vote_type})
 
+                # Update deltas based on new vote
                 if vote_type == 1:
-                    upvote_change = 1
+                    up_delta = 1
                 else:
-                    downvote_change = 1
-                new_vote_status = vote_type
+                    down_delta = 1
+                new_status = vote_type
 
-            # update vote summary
-            if upvote_change != 0 or downvote_change != 0:
+            # Update the review's vote counts
+            try:
                 result = conn.execute(text('''
                     UPDATE Reviews_Feedbacks
-                    SET upvotes = upvotes + :upvote_change, 
-                        downvotes = downvotes + :downvote_change
+                    SET upvotes = upvotes + :up_delta,
+                        downvotes = downvotes + :down_delta
                     WHERE review_id = :review_id
                     RETURNING upvotes, downvotes
-                '''), {"upvote_change": upvote_change, "downvote_change": downvote_change, "review_id": review_id})
+                '''), {"up_delta": up_delta, "down_delta": down_delta, "review_id": review_id})
 
-                updated_counts = result.fetchone()
-                if not updated_counts:
-                    conn.rollback()  # rollback on failure
+                updated = result.fetchone()
+                if not updated:
                     raise Exception("Failed updating review counts.")
 
-                conn.commit()  # commit changes
-
-                return {  # return success + counts
-                    'success': True,
-                    'upvotes': updated_counts[0],
-                    'downvotes': updated_counts[1],
-                    'new_vote_status': new_vote_status
-                }
-            else:
-                # no change: return current
-                conn.rollback()
-                result = conn.execute(text('''
-                    SELECT upvotes, downvotes FROM Reviews_Feedbacks 
-                    WHERE review_id = :review_id
-                '''), {"review_id": review_id})
-
-                current_counts = result.fetchone()
-
+                # Return the updated vote counts and vote status
                 return {
                     'success': True,
-                    'upvotes': current_counts[0],
-                    'downvotes': current_counts[1],
-                    'new_vote_status': new_vote_status
+                    'upvotes': updated[0],
+                    'downvotes': updated[1],
+                    'new_vote_status': new_status
                 }
-
-        except Exception as e:
-            # ensure rollback
-            try:
-                conn.rollback()
-            except:
-                pass
-
-            print(f"Error processing vote: {e}")  # log error
-
-            try:
-                # fetch fallback counts
-                conn = app.db.engine.connect()
-                result = conn.execute(text('''
-                    SELECT upvotes, downvotes FROM Reviews_Feedbacks 
-                    WHERE review_id = :review_id
-                '''), {"review_id": review_id})
-
-                counts = result.fetchone()
-
-                return {
-                    'success': False,
-                    'error': str(e),
-                    'upvotes': counts[0] if counts else 0,
-                    'downvotes': counts[1] if counts else 0
-                }
-            except:
-                # fallback if everything fails
-                return {
-                    'success': False,
-                    'error': str(e),
-                    'upvotes': 0,
-                    'downvotes': 0
-                }
+            except Exception as e:
+                app.logger.error(f"Error updating vote counts: {e}", exc_info=True)
+                # Re-raise the exception to be caught by the route handler
+                raise

@@ -74,4 +74,16 @@ class User(UserMixin):
         WHERE user_id = :uid
         """, balance=self.current_balance, uid=self.user_id)
 
+    @staticmethod
+    def make_seller(user_id):
+        try:
+            app.db.execute("""
+                UPDATE Accounts
+                SET is_seller = TRUE
+                WHERE user_id = :user_id
+            """, user_id=user_id)
+            return True # Indicate success
+        except Exception as e:
+            app.logger.error(f"Error updating user {user_id} to seller: {e}")
+            return False # Indicate failure
 
