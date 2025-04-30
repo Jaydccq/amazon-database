@@ -1,12 +1,12 @@
 from flask import render_template, Blueprint, jsonify, request, redirect, url_for, flash
 from flask_login import current_user, login_required
 from datetime import datetime
-
+from sqlalchemy import text
 # Import necessary models
 from .models.review import Review
 from .models.user import User
 from .models.product import Product
-
+# Import the app instance
 bp = Blueprint('reviews', __name__)
 
 
@@ -165,35 +165,6 @@ def delete_review(review_id): # API: Delete a review
     return jsonify({'success': success}) # Return success status
 
 
-@bp.route('/reviews/vote/<int:review_id>', methods=['POST'])
-@login_required # Must be logged in
-def vote_review(review_id): # Process vote requests
-    vote_type = request.form.get('vote_type', type=int) # Get vote type (1/-1)
-
-    # Validate vote type
-    if vote_type not in [1, -1]:
-        return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
-
-    # Check if review exists
-    review = Review.get(review_id)
-    if not review:
-        return jsonify({'success': False, 'error': 'Review not found'}), 404
-
-    # Optional: Prevent self-voting
-    # if review.user_id == current_user.id:
-    #    return jsonify({'success': False, 'error': 'Cannot vote own review'}), 403
-
-    try:
-        # Call model add_vote method
-        result = Review.add_vote(current_user.id, review_id, vote_type)
-        return jsonify(result) # Return result from model
-    except ValueError as e:
-        # Return specific validation errors
-        return jsonify({'success': False, 'error': str(e)}), 400
-    except Exception as e:
-        print(f"Vote error: {e}") # Log unexpected errors
-        # Return generic server error
-        return jsonify({'success': False, 'error': 'Server error occurred'}), 500
 
 
 @bp.route('/reviews/product/<int:product_id>')
@@ -257,3 +228,39 @@ def seller_reviews(seller_id): # Display seller reviews page
                            avg_rating=avg_rating,
                            review_count=review_count,
                            rating_distribution=rating_distribution)
+
+
+@bp.route('/reviews/vote/<int:review_id>', methods=['POST'])
+@login_required  # login required
+def vote_review(review_id):  # handle vote request
+    vote_type = request.form.get('vote_type', type=int)  # get vote type
+
+    # validate vote type
+    if vote_type not in [1, -1]:
+        return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
+
+    # check review existence
+    review = Review.get(review_id)
+    if not review:
+        return jsonify({'success': False, 'error': 'Review not found'}), 404
+
+    # prevent self-voting
+    if review.user_id == current_user.id:
+        return jsonify({'success': False, 'error': 'Cannot vote own review'}), 403
+
+    try:
+        # add vote to DB
+        result = Review.add_vote(current_user.id, review_id, vote_type)
+
+        # log vote action
+        app.logger.info(
+            f"Vote added: user_id={current_user.id}, review_id={review_id}, vote_type={vote_type}, result={result}")
+
+        return jsonify(result)  # return result
+    except ValueError as e:
+        # handle validation error
+        return jsonify({'success': False, 'error': str(e)}), 400
+    except Exception as e:
+        app.logger.error(f"Vote error: {e}")  # log unexpected error
+        # return server error
+        return jsonify({'success': False, 'error': 'Server error occurred'}), 500

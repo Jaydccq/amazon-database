@@ -1,6 +1,6 @@
 from flask import current_app as app
 from datetime import datetime
-
+from sqlalchemy import text
 class Review:
     # Initialize review object attributes
     def __init__(self, review_id, user_id, comment, review_date, product_id, seller_id, rating, upvotes, downvotes, user_vote=None):
@@ -65,31 +65,35 @@ class Review:
         return [Review(*row) for row in rows]
 
     @staticmethod
-    def get_product_review(product_id, current_user_id=None): # Get reviews for product
-        # Fetch product reviews with votes
+    def get_product_review(product_id, current_user_id=None):  # Get reviews for product
         query = '''
-            SELECT r.review_id, r.user_id, r.comment, r.review_date, r.product_id, r.seller_id, r.rating,
-                   r.upvotes, r.downvotes,
-                   CASE WHEN :current_user_id IS NOT NULL THEN rv.vote_type ELSE NULL END AS user_vote
-            FROM Reviews_Feedbacks r
-            LEFT JOIN ReviewVotes rv ON r.review_id = rv.review_id AND rv.user_id = :current_user_id
-            WHERE r.product_id = :product_id
-            ORDER BY (r.upvotes - r.downvotes) DESC, r.review_date DESC
-        '''
+                SELECT r.review_id, r.user_id, r.comment, r.review_date, r.product_id, r.seller_id, r.rating,
+                       r.upvotes, r.downvotes,
+                       CASE WHEN :current_user_id IS NOT NULL THEN rv.vote_type ELSE NULL END AS user_vote
+                FROM Reviews_Feedbacks r
+                LEFT JOIN ReviewVotes rv ON r.review_id = rv.review_id AND rv.user_id = :current_user_id
+                WHERE r.product_id = :product_id
+                ORDER BY (r.upvotes - r.downvotes) DESC, r.review_date DESC
+            '''
         rows = app.db.execute(query, product_id=product_id, current_user_id=current_user_id)
 
         all_reviews = [Review(*row) for row in rows]
 
-        # Separate top 3 helpful
-        top_helpful = sorted(all_reviews, key=lambda x: x.helpfulness, reverse=True)
+        # for i, r in enumerate(all_reviews):
+        #     print(f"  Review {i+1}: ID={r.review_id}, Helpfulness={r.helpfulness}, Date={r.review_date}")
+
+        top_helpful = sorted(all_reviews, key=lambda x: x.helpfulness, reverse=True)  # Sort by helpfulness score
         top_3 = top_helpful[:3]
         remaining = top_helpful[3:]
 
+        print(f"--- Remaining before date sort (IDs): {[r.review_id for r in remaining]} ---")
+
         # Sort remaining by date
-        remaining_sorted_by_date = sorted(remaining, key=lambda x: x.review_date, reverse=True)
+        remaining_sorted_by_date = sorted(remaining, key=lambda x: x.review_date, reverse=True)  # Sort rest by date
 
         # Combine lists for final sort
         sorted_reviews = top_3 + remaining_sorted_by_date
+
 
         return sorted_reviews
 
@@ -230,84 +234,137 @@ class Review:
 
 
     @staticmethod
-    def add_vote(user_id, review_id, vote_type): # Process user vote action
+    def add_vote(user_id, review_id, vote_type):  # handle user vote
         if vote_type not in [1, -1]:
-            raise ValueError("Invalid vote type") # Must be 1 or -1
+            raise ValueError("Invalid vote type")  # must be 1 or -1
 
-        conn = app.db.get_conn() # Get database connection
         try:
-            with conn.cursor() as cur:
-                # Check existing vote status
-                cur.execute('''
-                    SELECT vote_type FROM ReviewVotes WHERE user_id = %s AND review_id = %s
-                ''', (user_id, review_id))
-                existing_vote = cur.fetchone()
+            # begin DB transaction
+            conn = app.db.engine.begin()
 
-                upvote_change = 0
-                downvote_change = 0
-                new_vote_status = None # User's final vote status
+            # check existing vote
+            result = conn.execute(text('''
+                SELECT vote_type FROM ReviewVotes 
+                WHERE user_id = :user_id AND review_id = :review_id
+            '''), {"user_id": user_id, "review_id": review_id})
 
-                if existing_vote:
-                    existing_vote_type = existing_vote[0]
-                    if existing_vote_type == vote_type:
-                        # Same button clicked: remove vote
-                        cur.execute('DELETE FROM ReviewVotes WHERE user_id = %s AND review_id = %s', (user_id, review_id))
-                        if vote_type == 1: upvote_change = -1
-                        else: downvote_change = -1
-                        new_vote_status = None
+            existing_vote = result.fetchone()
+            upvote_change = 0
+            downvote_change = 0
+            new_vote_status = None  # final vote state
+
+            if existing_vote:
+                existing_vote_type = existing_vote[0]
+                if existing_vote_type == vote_type:
+                    # same vote clicked: remove
+                    conn.execute(text('''
+                        DELETE FROM ReviewVotes 
+                        WHERE user_id = :user_id AND review_id = :review_id
+                    '''), {"user_id": user_id, "review_id": review_id})
+
+                    if vote_type == 1:
+                        upvote_change = -1
                     else:
-                        # Different button clicked: change vote
-                        cur.execute('UPDATE ReviewVotes SET vote_type = %s, voted_at = CURRENT_TIMESTAMP WHERE user_id = %s AND review_id = %s', (vote_type, user_id, review_id))
-                        if vote_type == 1: # Changed to upvote
-                            upvote_change = 1
-                            downvote_change = -1
-                        else: # Changed to downvote
-                            upvote_change = -1
-                            downvote_change = 1
-                        new_vote_status = vote_type
+                        downvote_change = -1
+                    new_vote_status = None
                 else:
-                    # No existing vote: insert new
-                    cur.execute('INSERT INTO ReviewVotes (user_id, review_id, vote_type, voted_at) VALUES (%s, %s, %s, CURRENT_TIMESTAMP)', (user_id, review_id, vote_type))
-                    if vote_type == 1: upvote_change = 1
-                    else: downvote_change = 1
+                    # change vote type
+                    conn.execute(text('''
+                        UPDATE ReviewVotes 
+                        SET vote_type = :vote_type, voted_at = CURRENT_TIMESTAMP 
+                        WHERE user_id = :user_id AND review_id = :review_id
+                    '''), {"vote_type": vote_type, "user_id": user_id, "review_id": review_id})
+
+                    if vote_type == 1:  # to upvote
+                        upvote_change = 1
+                        downvote_change = -1
+                    else:  # to downvote
+                        upvote_change = -1
+                        downvote_change = 1
                     new_vote_status = vote_type
+            else:
+                # new vote: insert
+                conn.execute(text('''
+                    INSERT INTO ReviewVotes (user_id, review_id, vote_type, voted_at) 
+                    VALUES (:user_id, :review_id, :vote_type, CURRENT_TIMESTAMP)
+                '''), {"user_id": user_id, "review_id": review_id, "vote_type": vote_type})
 
-                # Update aggregate counts if changed
-                if upvote_change != 0 or downvote_change != 0:
-                    cur.execute('''
-                        UPDATE Reviews_Feedbacks
-                        SET upvotes = upvotes + %s, downvotes = downvotes + %s
-                        WHERE review_id = %s
-                        RETURNING upvotes, downvotes
-                    ''', (upvote_change, downvote_change, review_id))
-                    updated_counts = cur.fetchone()
-                    if not updated_counts:
-                         conn.rollback() # Rollback if update failed
-                         raise Exception("Failed updating review counts.")
-                    conn.commit() # Commit transaction
-                    # Return success with new counts
-                    return {'success': True, 'upvotes': updated_counts[0], 'downvotes': updated_counts[1], 'new_vote_status': new_vote_status}
+                if vote_type == 1:
+                    upvote_change = 1
                 else:
-                     conn.rollback() # Rollback if no changes
-                     # Fetch current counts if needed
-                     cur.execute('SELECT upvotes, downvotes FROM Reviews_Feedbacks WHERE review_id = %s', (review_id,))
-                     current_counts = cur.fetchone()
-                     # Return success with current counts
-                     return {'success': True, 'upvotes': current_counts[0], 'downvotes': current_counts[1], 'new_vote_status': new_vote_status}
+                    downvote_change = 1
+                new_vote_status = vote_type
 
+            # update vote summary
+            if upvote_change != 0 or downvote_change != 0:
+                result = conn.execute(text('''
+                    UPDATE Reviews_Feedbacks
+                    SET upvotes = upvotes + :upvote_change, 
+                        downvotes = downvotes + :downvote_change
+                    WHERE review_id = :review_id
+                    RETURNING upvotes, downvotes
+                '''), {"upvote_change": upvote_change, "downvote_change": downvote_change, "review_id": review_id})
+
+                updated_counts = result.fetchone()
+                if not updated_counts:
+                    conn.rollback()  # rollback on failure
+                    raise Exception("Failed updating review counts.")
+
+                conn.commit()  # commit changes
+
+                return {  # return success + counts
+                    'success': True,
+                    'upvotes': updated_counts[0],
+                    'downvotes': updated_counts[1],
+                    'new_vote_status': new_vote_status
+                }
+            else:
+                # no change: return current
+                conn.rollback()
+                result = conn.execute(text('''
+                    SELECT upvotes, downvotes FROM Reviews_Feedbacks 
+                    WHERE review_id = :review_id
+                '''), {"review_id": review_id})
+
+                current_counts = result.fetchone()
+
+                return {
+                    'success': True,
+                    'upvotes': current_counts[0],
+                    'downvotes': current_counts[1],
+                    'new_vote_status': new_vote_status
+                }
 
         except Exception as e:
-            conn.rollback() # Rollback on any error
-            print(f"Error processing vote: {e}")
-            # Try fetching counts on error
+            # ensure rollback
             try:
-                 with conn.cursor() as cur_err:
-                    cur_err.execute('SELECT upvotes, downvotes FROM Reviews_Feedbacks WHERE review_id = %s', (review_id,))
-                    counts_on_error = cur_err.fetchone()
-                    # Return failure with counts
-                    return {'success': False, 'error': str(e), 'upvotes': counts_on_error[0] if counts_on_error else 0, 'downvotes': counts_on_error[1] if counts_on_error else 0}
+                conn.rollback()
             except:
-                 # Return failure with zero counts
-                 return {'success': False, 'error': str(e), 'upvotes': 0, 'downvotes': 0}
-        finally:
-            app.db.release_conn(conn) # Release connection
+                pass
+
+            print(f"Error processing vote: {e}")  # log error
+
+            try:
+                # fetch fallback counts
+                conn = app.db.engine.connect()
+                result = conn.execute(text('''
+                    SELECT upvotes, downvotes FROM Reviews_Feedbacks 
+                    WHERE review_id = :review_id
+                '''), {"review_id": review_id})
+
+                counts = result.fetchone()
+
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'upvotes': counts[0] if counts else 0,
+                    'downvotes': counts[1] if counts else 0
+                }
+            except:
+                # fallback if everything fails
+                return {
+                    'success': False,
+                    'error': str(e),
+                    'upvotes': 0,
+                    'downvotes': 0
+                }

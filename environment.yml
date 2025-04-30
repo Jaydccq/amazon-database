@@ -41,4 +41,6 @@ dependencies:
       - click==8.1.8
       - flask-login==0.6.3
       - psycopg2-binary==2.9.10
+      - python-dotenv  ==1.1.0
+      - sqlalchemy ==2.0.18
 prefix: /opt/anaconda3/envs/miniamazon

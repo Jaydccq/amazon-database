@@ -29,7 +29,10 @@ def view_cart():
         saved_items = cart_data.get('saved_for_later', [])
 
         # Calculate total from 'in_cart'
-        total_cart_value = sum(item[7] for item in in_cart_items) # item[7] is total_price
+        total_cart_value = sum(item[7] for item in in_cart_items)
+
+        print(f"DEBUG: In cart items passed to template: {in_cart_items}")  # <-- 查看传递给模板的数据
+        print(f"DEBUG: Saved items passed to template: {saved_items}")  # <-- 查看传递给模板的数据
 
         return render_template('cart.html',
                                in_cart_items=in_cart_items,

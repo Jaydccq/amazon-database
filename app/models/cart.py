@@ -57,42 +57,48 @@ class Cart:
             logger.error(f"Error adding to cart for user {user_id}: {e}", exc_info=True)
             return None
 
+    # CORRECTED VERSION - Use this one:
     @staticmethod
     def get_cart_items(user_id):
+        """ Gets 'in_cart' & 'saved' items """
         items = {'in_cart': [], 'saved_for_later': []}
         try:
+            # Query all cart items, INCLUDING cp.status
             result = app.db.execute('''
             SELECT
-                    cp.product_id,
-                    cp.seller_id,
-                    cp.quantity,
-                    p.product_name,
-                    p.description,
-                    p.image,
-                    cp.price_at_addition as unit_price,
-                    (cp.quantity * cp.price_at_addition) as total_price,
-                    CONCAT(a.first_name, ' ', a.last_name) as seller_name,
-                    p.owner_id
-                FROM Cart_Products cp
-                JOIN Carts c ON cp.cart_id = c.cart_id
-                JOIN Products p ON cp.product_id = p.product_id
-                JOIN Accounts a ON cp.seller_id = a.user_id
-                WHERE c.user_id = :user_id
-                ORDER BY cp.added_at DESC -- <<< REMOVED cp.status from ORDER BY
-                ''',
-                user_id=user_id)
+                cp.product_id,         
+                cp.seller_id,          
+                cp.quantity,           
+                p.product_name,        
+                p.description,         
+                p.image,               
+                cp.price_at_addition as unit_price, 
+                (cp.quantity * cp.price_at_addition) as total_price, 
+                CONCAT(a.first_name, ' ', a.last_name) as seller_name, 
+                p.owner_id,             
+                cp.status              
+            FROM Cart_Products cp
+            JOIN Carts c ON cp.cart_id = c.cart_id
+            JOIN Products p ON cp.product_id = p.product_id
+            JOIN Accounts a ON cp.seller_id = a.user_id
+            WHERE c.user_id = :user_id
+            ORDER BY cp.status, cp.added_at DESC 
+            ''', user_id=user_id)
 
-            # Separate items by status
+            # Separate items by status (now row[10] exists)
             for row in result:
-                if row[10] == 'in_cart': # status is 'in_cart'
+                print(f"DEBUG: DB Row raw: {row}")  # Keep for debugging if needed
+                if row[10] == 'in_cart':  # status is 'in_cart'
                     items['in_cart'].append(row)
-                elif row[10] == 'saved_for_later': # status is 'saved_for_later'
+                    # print(f"DEBUG: Added to in_cart: {row[3]}") # Optional debug
+                elif row[10] == 'saved_for_later':  # status is 'saved_for_later'
                     items['saved_for_later'].append(row)
+                    # print(f"DEBUG: Added to saved_for_later: {row[3]}") # Optional debug
 
             return items
         except Exception as e:
             logger.error(f"Error getting cart items for user {user_id}: {e}", exc_info=True)
-            return items # Return empty structure
+            return items  # Return empty structure
 
     @staticmethod
     def _get_cart_id(user_id):
