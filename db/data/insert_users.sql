@@ -1,5 +1,5 @@
 INSERT INTO Users (email, first_name, last_name, address, password, current_balance, is_seller) VALUES
-('OR 1=1 --', 'Alice', 'Smith', '123 Main St', 'pass1', 55.2, FALSE),
+('alice1@example.com', 'Alice', 'Smith', '123 Main St', 'pass1', 55.2, FALSE),
 ('bob2@example.com', 'Bob', 'Johnson', '456 Elm St', 'pass2', 132.0, TRUE),
 ('carol3@example.com', 'Carol', 'Williams', '789 Pine St', 'pass3', 0.0, FALSE),
 ('david4@example.com', 'David', 'Brown', '321 Oak St', 'pass4', 74.3, FALSE),
