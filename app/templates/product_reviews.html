@@ -4,35 +4,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reviews.css') }}">
     <style>
         .vote-btn {
-            cursor: pointer;
             color: #6c757d;
             margin: 0 5px;
-            transition: color 0.2s ease-in-out, transform 0.1s ease-in-out;
             background: none;
             border: none;
-            padding: 0;
-            vertical-align: middle;
+            padding: 2px 5px;
+            border-radius: 3px;
         }
         .vote-btn:hover {
-            color: #007bff;
-            transform: scale(1.1);
+            background-color: #f8f9fa;
         }
         .vote-btn.active {
             color: #007bff;
+            background-color: #e7f1ff;
         }
         .vote-btn.down.active {
             color: #dc3545;
-        }
-        .vote-btn:disabled {
-            color: #adb5bd;
-            cursor: not-allowed;
+            background-color: #f8d7da;
         }
         .helpfulness-score {
             font-size: 0.9em;
             color: #6c757d;
             margin-left: 10px;
-            cursor: default;
-            user-select: none;
         }
         .review-card {
             border-bottom: 1px solid #eee;
@@ -50,14 +43,6 @@
         }
         .review-author a:hover {
             text-decoration: underline;
-        }
-        .score-updated {
-            animation: pulse 0.5s;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
         }
     </style>
 {% endblock %}
@@ -126,7 +111,7 @@
                                 </a>
                             </div>
                         {% else %}
-                            <p class="text-center text-muted mt-3"><a href="{{ url_for('users.login') }}">Log in</a> to write a review.</p>
+                            <p class="text-center text-muted mt-3"><a href="{{ url_for('users.login') }}">Log in</a> to write a review or vote a review.</p>
                              <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
                                 class="btn btn-outline-secondary btn-block mt-2">
                                 <i class="fas fa-arrow-left"></i> Back to Product
@@ -158,6 +143,19 @@
             </div>
 
             <div class="col-md-8">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
                 <div class="card mb-4">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">Customer Reviews ({{ review_count }})</h4>
@@ -183,40 +181,41 @@
                                         <p class="review-text mb-1">{{ review.comment }}</p>
                                     </div>
                                     <div class="review-footer d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center vote-container" data-review-id="{{ review.review_id }}">
+                                        <div class="d-flex align-items-center vote-container">
                                             {% if current_user.is_authenticated %}
                                                 {% set can_vote = current_user.id != review.user_id %}
 
-                                                <button class="btn btn-sm vote-btn upvote-btn {% if review.user_vote == 1 %}active{% endif %}"
-                                                        data-review-id="{{ review.review_id }}"
-                                                        data-vote-type="1"
-                                                        {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
-                                                    <i class="fas fa-thumbs-up"></i>
-                                                </button>
-                                                <span class="upvote-count mr-2 small text-muted">{{ review.upvotes }}</span>
+                                                <!-- 使用表单代替AJAX -->
+                                                <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline mr-2">
+                                                    <input type="hidden" name="vote_type" value="1">
+                                                    <button type="submit" class="vote-btn {% if review.user_vote == 1 %}active{% endif %}"
+                                                            {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
+                                                        <i class="fas fa-thumbs-up"></i> {{ review.upvotes }}
+                                                    </button>
+                                                </form>
 
-                                                <button class="btn btn-sm vote-btn downvote-btn down {% if review.user_vote == -1 %}active{% endif %}"
-                                                        data-review-id="{{ review.review_id }}"
-                                                        data-vote-type="-1"
-                                                        {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
-                                                    <i class="fas fa-thumbs-down"></i>
-                                                </button>
-                                                <span class="downvote-count mr-3 small text-muted">{{ review.downvotes }}</span>
+                                                <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline mr-2">
+                                                    <input type="hidden" name="vote_type" value="-1">
+                                                    <button type="submit" class="vote-btn down {% if review.user_vote == -1 %}active{% endif %}"
+                                                            {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
+                                                        <i class="fas fa-thumbs-down"></i> {{ review.downvotes }}
+                                                    </button>
+                                                </form>
 
                                                 <span class="helpfulness-score">
-                                                    (<span class="score">{{ review.helpfulness }}</span>) helpful
+                                                    ({{ review.upvotes - review.downvotes }}) helpful
                                                 </span>
-
                                             {% else %}
-                                                <span class="text-muted mr-1"><i class="fas fa-thumbs-up"></i></span>
-                                                <span class="upvote-count mr-2 small">{{ review.upvotes }}</span>
-                                                <span class="text-muted mr-1"><i class="fas fa-thumbs-down"></i></span>
-                                                <span class="downvote-count mr-3 small">{{ review.downvotes }}</span>
+                                                <span class="mr-2">
+                                                    <i class="fas fa-thumbs-up"></i> {{ review.upvotes }}
+                                                </span>
+                                                <span class="mr-2">
+                                                    <i class="fas fa-thumbs-down"></i> {{ review.downvotes }}
+                                                </span>
                                                 <span class="helpfulness-score">
-                                                    (<span class="score">{{ review.helpfulness }}</span>) helpful
+                                                    ({{ review.upvotes - review.downvotes }}) helpful
                                                 </span>
                                             {% endif %}
-                                            <span class="vote-error text-danger small ml-2" style="display: none;"></span>
                                         </div>
 
                                         {% if current_user.is_authenticated and current_user.id == review.user_id %}
@@ -225,10 +224,14 @@
                                                    class="btn btn-sm btn-outline-secondary py-0 px-1" title="Edit your review">
                                                     <i class="fas fa-edit fa-xs"></i> <small>Edit</small>
                                                 </a>
-                                                <button class="btn btn-sm btn-outline-danger py-0 px-1 delete-review-btn"
-                                                        data-review-id="{{ review.review_id }}" title="Delete your review">
-                                                    <i class="fas fa-trash-alt fa-xs"></i> <small>Delete</small>
-                                                </button>
+
+                                                <!-- 使用表单代替AJAX删除 -->
+                                                <form method="POST" action="{{ url_for('reviews.delete_review', review_id=review.review_id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1"
+                                                            onclick="return confirm('Are you sure you want to delete this review?');">
+                                                        <i class="fas fa-trash-alt fa-xs"></i> <small>Delete</small>
+                                                    </button>
+                                                </form>
                                             </div>
                                         {% endif %}
                                     </div>
@@ -265,186 +268,4 @@
             </div>
         </div>
     </div>
-
-    <div class="modal fade" id="deleteReviewModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            Are you sure you want to delete this review? This action cannot be undone.
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Review</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {% if current_user.is_authenticated %}
-    <script>
-    $(document).ready(function() {
-        const baseVoteUrl = "{{ url_for('reviews.vote_review', review_id=0) }}";
-        const baseDeleteUrl = "{{ url_for('reviews.delete_review', review_id=0) }}";
-        let reviewIdToDelete = null;
-
-        $('.vote-btn').on('click', function(e) {
-            e.preventDefault();
-
-            var button = $(this);
-            if (button.prop('disabled')) {
-                return;
-            }
-
-            var reviewId = button.data('review-id');
-            var voteType = button.data('vote-type');
-            var voteContainer = $('.vote-container[data-review-id="' + reviewId + '"]');
-
-            var upvoteBtn = voteContainer.find('.upvote-btn');
-            var downvoteBtn = voteContainer.find('.downvote-btn');
-            var upvoteCountSpan = voteContainer.find('.upvote-count');
-            var downvoteCountSpan = voteContainer.find('.downvote-count');
-            var helpfulnessScoreSpan = voteContainer.find('.helpfulness-score .score');
-            var errorDiv = voteContainer.find('.vote-error');
-
-            errorDiv.hide().text('');
-            upvoteBtn.prop('disabled', true);
-            downvoteBtn.prop('disabled', true);
-
-            var oldScore = parseInt(helpfulnessScoreSpan.text(), 10);
-
-            $.ajax({
-                url: baseVoteUrl.replace(/0$/, reviewId),
-                type: 'POST',
-                data: {
-                    vote_type: voteType
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        upvoteCountSpan.text(response.upvotes);
-                        downvoteCountSpan.text(response.downvotes);
-
-                        var newScore = response.upvotes - response.downvotes;
-                        helpfulnessScoreSpan.text(newScore);
-
-                        if (oldScore !== newScore) {
-                            helpfulnessScoreSpan.addClass('score-updated');
-                            setTimeout(function() {
-                                helpfulnessScoreSpan.removeClass('score-updated');
-                            }, 500);
-                        }
-
-                        upvoteBtn.removeClass('active');
-                        downvoteBtn.removeClass('active');
-
-                        if (response.new_vote_status === 1) {
-                            upvoteBtn.addClass('active');
-                        } else if (response.new_vote_status === -1) {
-                            downvoteBtn.addClass('active');
-                        }
-                    } else {
-                        errorDiv.text('Vote Error: ' + response.error).show();
-                    }
-                },
-                error: function(xhr, status, error) {
-                    var errorMsg = 'Could not submit vote. Please try again.';
-
-                    try {
-                        var jsonError = JSON.parse(xhr.responseText);
-                        if (jsonError && jsonError.error) {
-                            errorMsg = jsonError.error;
-                        }
-                    } catch(e) {}
-
-                    errorDiv.text('Error: ' + errorMsg).show();
-                },
-                complete: function() {
-                    var canVote = upvoteBtn.attr('title') !== 'Cannot vote on your own review';
-
-                    if (canVote) {
-                        setTimeout(function() {
-                            upvoteBtn.prop('disabled', false);
-                            downvoteBtn.prop('disabled', false);
-                        }, 300);
-                    }
-                }
-            });
-        });
-
-        $('.delete-review-btn').click(function() {
-            reviewIdToDelete = $(this).data('review-id');
-            $('#deleteReviewModal').modal('show');
-        });
-
-        $('#confirmDeleteBtn').click(function() {
-            if (!reviewIdToDelete) return;
-
-            var reviewCard = $('#review-' + reviewIdToDelete);
-            var errorDiv = reviewCard.find('.vote-error');
-            errorDiv.hide().text('');
-
-            $.ajax({
-                url: baseDeleteUrl.replace(/0$/, reviewIdToDelete),
-                type: 'DELETE',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        reviewCard.fadeOut(500, function() {
-                            $(this).remove();
-
-                            var countElement = $('.card-header h4');
-                            var currentText = countElement.text();
-                            var match = currentText.match(/\((\d+)\)/);
-                            if (match && match[1]) {
-                                var currentCount = parseInt(match[1], 10);
-                                if (currentCount > 0) {
-                                    var newCount = currentCount - 1;
-                                    countElement.text('Customer Reviews (' + newCount + ')');
-                                    var leftPanelCount = $('.rating-summary .text-muted');
-                                    leftPanelCount.text(newCount + ' review' + (newCount !== 1 ? 's' : ''));
-                                } else {
-                                     countElement.text('Customer Reviews (0)');
-                                     $('.rating-summary .text-muted').text('0 reviews');
-                                     if ($('.review-card').length === 0) {
-                                     }
-                                }
-                            }
-                         });
-                         $('#deleteReviewModal').modal('hide');
-                    } else {
-                        errorDiv.text('Delete Error: ' + response.error).show();
-                         $('#deleteReviewModal').modal('hide');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    var errorMsg = 'Could not delete review. Please try again.';
-
-                    try {
-                        var jsonError = JSON.parse(xhr.responseText);
-                        if (jsonError && jsonError.error) {
-                            errorMsg = jsonError.error;
-                        }
-                    } catch(e) {}
-
-                    errorDiv.text('Error: ' + errorMsg).show();
-                    $('#deleteReviewModal').modal('hide');
-                },
-                complete: function() {
-                    reviewIdToDelete = null;
-                }
-            });
-        });
-
-        $('#deleteReviewModal').on('hidden.bs.modal', function (e) {
-            reviewIdToDelete = null;
-        });
-    });
-    </script>
-    {% endif %}
 {% endblock %}

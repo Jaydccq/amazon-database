@@ -149,21 +149,6 @@ def edit_review(review_id): # Handle editing own review
     return render_template('edit_review.html', review=review)
 
 
-@bp.route('/api/reviews/delete/<int:review_id>', methods=['DELETE'])
-@login_required # Must be logged in
-def delete_review(review_id): # API: Delete a review
-    review = Review.get(review_id) # Get the review
-    if not review:
-        return jsonify({'success': False, 'error': 'Review not found'}), 404
-
-    # Check ownership
-    if review.user_id != current_user.id:
-        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-
-    # Call model delete method
-    success = Review.delete(review_id)
-    return jsonify({'success': success}) # Return success status
-
 
 
 
@@ -233,32 +218,67 @@ def seller_reviews(seller_id): # Display seller reviews page
 @bp.route('/reviews/vote/<int:review_id>', methods=['POST'])
 @login_required
 def vote_review(review_id):
-    # Get vote type from form data and convert to integer
+    # Get the vote type from the form (1 for upvote, -1 for downvote)
     vote_type = request.form.get('vote_type', type=int)
 
-    # Validate vote type (must be 1 for upvote or -1 for downvote)
+    # Validate the vote type
     if vote_type not in [1, -1]:
-        return jsonify({'success': False, 'error': 'Invalid vote type'}), 400
+        flash('Invalid vote type', 'danger')
+        return redirect(request.referrer or url_for('index.index'))
 
-    # Check if review exists
+    # Check if the review exists
     review = Review.get(review_id)
     if not review:
-        return jsonify({'success': False, 'error': 'Review not found'}), 404
+        flash('Review does not exist', 'danger')
+        return redirect(request.referrer or url_for('index.index'))
 
-    # Prevent self-voting (users cannot vote their own reviews)
+    # Prevent users from voting on their own reviews
     if review.user_id == current_user.id:
-        return jsonify({'success': False, 'error': 'Cannot vote on your own review'}), 403
+        flash('You cannot vote on your own review', 'danger')
+        return redirect(request.referrer or url_for('index.index'))
 
     try:
-        # Process the vote and get the result
+        # Handle the voting logic
         result = Review.add_vote(current_user.id, review_id, vote_type)
-        app.logger.info(f"Vote added for review {review_id}: {result}")
-        return jsonify(result)
-    except ValueError as e:
-        # Handle validation errors
-        app.logger.warning(f"Vote validation error: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 400
+        if result.get('success'):
+            flash('Vote submitted successfully!', 'success')
+        else:
+            flash(f'Voting error: {result.get("error", "Unknown error")}', 'danger')
     except Exception as e:
-        # Handle unexpected errors
-        app.logger.error(f"Vote error for review {review_id}: {e}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Server error occurred'}), 500
+        flash(f'Server error: {str(e)}', 'danger')
+
+    # Redirect back to the previous page
+    return redirect(request.referrer or url_for('index.index'))
+
+
+@bp.route('/reviews/delete/<int:review_id>', methods=['POST'])
+@login_required
+def delete_review(review_id):
+    # Retrieve the review
+    review = Review.get(review_id)
+
+    # Check if the review exists
+    if not review:
+        flash('Review does not exist', 'danger')
+        return redirect(request.referrer or url_for('index.index'))
+
+    # Ensure that only the author can delete their own review
+    if review.user_id != current_user.id:
+        flash('You do not have permission to delete this review', 'danger')
+        return redirect(request.referrer or url_for('index.index'))
+
+    # Delete the review
+    success = Review.delete(review_id)
+
+    if success:
+        flash('Review deleted successfully', 'success')
+    else:
+        flash('Failed to delete the review', 'danger')
+
+    # Redirect to the appropriate page depending on context
+    if review.product_id:
+        return redirect(url_for('product.product_detail', product_id=review.product_id))
+    elif review.seller_id:
+        return redirect(url_for('reviews.seller_reviews', seller_id=review.seller_id))
+    else:
+        return redirect(url_for('reviews.user_reviews_page'))

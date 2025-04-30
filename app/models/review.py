@@ -1,15 +1,13 @@
 from flask import current_app as app
 from datetime import datetime
-from sqlalchemy import text
-
-
 
 class Review:
     # Initialize review object attributes
-    def __init__(self, review_id, user_id, comment, review_date, product_id, seller_id, rating, upvotes, downvotes, user_vote=None):
+    def __init__(self, review_id, user_id,user_name, comment, review_date, product_id, seller_id, rating, upvotes, downvotes, user_vote=None):
         self.review_id = review_id
         self.user_id = user_id
         self.comment = comment
+        self.user_name = user_name
         self.review_date = review_date
         self.product_id = product_id
         self.seller_id = seller_id
@@ -82,27 +80,22 @@ class Review:
 
         all_reviews = [Review(*row) for row in rows]
 
-        # for i, r in enumerate(all_reviews):
-        #     print(f"  Review {i+1}: ID={r.review_id}, Helpfulness={r.helpfulness}, Date={r.review_date}")
-
-        top_helpful = sorted(all_reviews, key=lambda x: x.helpfulness, reverse=True)  # Sort by helpfulness score
+        # Sort by helpfulness score
+        top_helpful = sorted(all_reviews, key=lambda x: x.helpfulness, reverse=True)
         top_3 = top_helpful[:3]
         remaining = top_helpful[3:]
 
-        print(f"--- Remaining before date sort (IDs): {[r.review_id for r in remaining]} ---")
-
         # Sort remaining by date
-        remaining_sorted_by_date = sorted(remaining, key=lambda x: x.review_date, reverse=True)  # Sort rest by date
+        remaining_sorted_by_date = sorted(remaining, key=lambda x: x.review_date, reverse=True)
 
         # Combine lists for final sort
         sorted_reviews = top_3 + remaining_sorted_by_date
-
 
         return sorted_reviews
 
     @staticmethod
     def get_seller_review(seller_id, current_user_id=None): # Get reviews for seller
-        # Fetch seller reviews with votes (needs sorting logic like product)
+        # Fetch seller reviews with votes
         query = '''
             SELECT r.review_id, r.user_id, r.comment, r.review_date, r.product_id, r.seller_id, r.rating,
                    r.upvotes, r.downvotes,
@@ -111,10 +104,10 @@ class Review:
             LEFT JOIN ReviewVotes rv ON r.review_id = rv.review_id AND rv.user_id = :current_user_id
             WHERE r.seller_id = :seller_id
             ORDER BY (r.upvotes - r.downvotes) DESC, r.review_date DESC
-        ''' # Added similar sorting/vote fetching
+        '''
         rows = app.db.execute(query, seller_id=seller_id, current_user_id=current_user_id)
 
-        # Apply same Top 3 + Recent sorting logic if desired
+        # Apply same Top 3 + Recent sorting logic
         all_reviews = [Review(*row) for row in rows]
         top_helpful = sorted(all_reviews, key=lambda x: x.helpfulness, reverse=True)
         top_3 = top_helpful[:3]
@@ -123,7 +116,6 @@ class Review:
         sorted_reviews = top_3 + remaining_sorted_by_date
 
         return sorted_reviews
-
 
     @staticmethod
     def create(user_id, comment, product_id=None, seller_id=None, rating=None): # Add a new review
@@ -243,87 +235,83 @@ class Review:
         if vote_type not in [1, -1]:
             raise ValueError("Invalid vote type")
 
-        # Use a transaction to ensure all changes are atomic
-        with app.db.engine.begin() as conn:
-            # Check if vote already exists
-            result = conn.execute(text('''
-                SELECT vote_type FROM ReviewVotes 
-                WHERE user_id = :user_id AND review_id = :review_id
-            '''), {"user_id": user_id, "review_id": review_id})
-            existing = result.fetchone()
+        # Check if vote already exists
+        existing = app.db.execute('''
+            SELECT vote_type FROM ReviewVotes 
+            WHERE user_id = :user_id AND review_id = :review_id
+        ''', user_id=user_id, review_id=review_id)
 
-            up_delta = 0
-            down_delta = 0
-            new_status = None
+        up_delta = 0
+        down_delta = 0
+        new_status = None
 
-            if existing:
-                # Vote exists, check if it's the same type
-                old_vote_type = existing[0]
-                if old_vote_type == vote_type:
-                    # Same vote type, remove the vote
-                    conn.execute(text('''
-                        DELETE FROM ReviewVotes
-                        WHERE user_id = :user_id AND review_id = :review_id
-                    '''), {"user_id": user_id, "review_id": review_id})
+        if existing:
+            # Vote exists, check if it's the same type
+            old_vote_type = existing[0][0]
+            if old_vote_type == vote_type:
+                # Same vote type, remove the vote
+                app.db.execute('''
+                    DELETE FROM ReviewVotes
+                    WHERE user_id = :user_id AND review_id = :review_id
+                ''', user_id=user_id, review_id=review_id)
 
-                    # Update deltas based on removed vote
-                    if vote_type == 1:
-                        up_delta = -1
-                    else:
-                        down_delta = -1
-                    new_status = None
-                else:
-                    # Different vote type, change the vote
-                    conn.execute(text('''
-                        UPDATE ReviewVotes
-                        SET vote_type = :vote_type, voted_at = CURRENT_TIMESTAMP
-                        WHERE user_id = :user_id AND review_id = :review_id
-                    '''), {"vote_type": vote_type, "user_id": user_id, "review_id": review_id})
-
-                    # Update deltas based on changed vote
-                    if vote_type == 1:  # Changed to upvote
-                        up_delta = 1
-                        down_delta = -1
-                    else:  # Changed to downvote
-                        up_delta = -1
-                        down_delta = 1
-                    new_status = vote_type
-            else:
-                # No existing vote, add a new one
-                conn.execute(text('''
-                    INSERT INTO ReviewVotes (user_id, review_id, vote_type, voted_at)
-                    VALUES (:user_id, :review_id, :vote_type, CURRENT_TIMESTAMP)
-                '''), {"user_id": user_id, "review_id": review_id, "vote_type": vote_type})
-
-                # Update deltas based on new vote
+                # Update deltas based on removed vote
                 if vote_type == 1:
-                    up_delta = 1
+                    up_delta = -1
                 else:
+                    down_delta = -1
+                new_status = None
+            else:
+                # Different vote type, change the vote
+                app.db.execute('''
+                    UPDATE ReviewVotes
+                    SET vote_type = :vote_type, voted_at = CURRENT_TIMESTAMP
+                    WHERE user_id = :user_id AND review_id = :review_id
+                ''', vote_type=vote_type, user_id=user_id, review_id=review_id)
+
+                # Update deltas based on changed vote
+                if vote_type == 1:  # Changed to upvote
+                    up_delta = 1
+                    down_delta = -1
+                else:  # Changed to downvote
+                    up_delta = -1
                     down_delta = 1
                 new_status = vote_type
+        else:
+            # No existing vote, add a new one
+            app.db.execute('''
+                INSERT INTO ReviewVotes (user_id, review_id, vote_type, voted_at)
+                VALUES (:user_id, :review_id, :vote_type, CURRENT_TIMESTAMP)
+            ''', user_id=user_id, review_id=review_id, vote_type=vote_type)
 
-            # Update the review's vote counts
-            try:
-                result = conn.execute(text('''
-                    UPDATE Reviews_Feedbacks
-                    SET upvotes = upvotes + :up_delta,
-                        downvotes = downvotes + :down_delta
-                    WHERE review_id = :review_id
-                    RETURNING upvotes, downvotes
-                '''), {"up_delta": up_delta, "down_delta": down_delta, "review_id": review_id})
+            # Update deltas based on new vote
+            if vote_type == 1:
+                up_delta = 1
+            else:
+                down_delta = 1
+            new_status = vote_type
 
-                updated = result.fetchone()
-                if not updated:
-                    raise Exception("Failed updating review counts.")
+        # Update the review's vote counts
+        try:
+            updated = app.db.execute('''
+                UPDATE Reviews_Feedbacks
+                SET upvotes = upvotes + :up_delta,
+                    downvotes = downvotes + :down_delta
+                WHERE review_id = :review_id
+                RETURNING upvotes, downvotes
+            ''', up_delta=up_delta, down_delta=down_delta, review_id=review_id)
 
-                # Return the updated vote counts and vote status
-                return {
-                    'success': True,
-                    'upvotes': updated[0],
-                    'downvotes': updated[1],
-                    'new_vote_status': new_status
-                }
-            except Exception as e:
-                app.logger.error(f"Error updating vote counts: {e}", exc_info=True)
-                # Re-raise the exception to be caught by the route handler
-                raise
+            if not updated:
+                raise Exception("Failed updating review counts.")
+
+            # Return the updated vote counts and vote status
+            return {
+                'success': True,
+                'upvotes': updated[0][0],
+                'downvotes': updated[0][1],
+                'new_vote_status': new_status
+            }
+        except Exception as e:
+            app.logger.error(f"Error updating vote counts: {e}", exc_info=True)
+            # Re-raise the exception to be caught by the route handler
+            raise
