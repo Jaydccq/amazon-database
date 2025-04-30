@@ -159,55 +159,6 @@
         </div>
         {% endif %}
 
-        <br><br>
-        {% if current_user.is_authenticated %}
-            <h2>Your recent purchases:</h2>
-            <table class='table table-hover table-bordered container'>
-                <thead class="thead-dark">
-                <tr>
-                    <th scope="col">Order ID</th>
-                    <th scope="col">Products</th>
-                    <th scope="col">Total Amount</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Status</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% if purchase_history %}
-                    {% for order in purchase_history %}
-                        <tr>
-                            <th scope="row">{{ order.order_id }}</th>
-                            <td>
-                                {% if order.items %}
-                                    <ul class="list-unstyled">
-                                        {% for item in order.items %}
-                                            <li>{{ item.product_name }} (x{{ item.quantity }})</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td>${{ "%.2f"|format(order.total_amount) }}</td>
-                            <td>{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                {% if order.order_status == 'Fulfilled' %}
-                                    <span class="badge bg-success">Fulfilled</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">Unfulfilled</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center">No purchase history found</td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-        {% else %}
-            <p><a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history!</p>
-        {% endif %}
+
     </div>
 {% endblock %}

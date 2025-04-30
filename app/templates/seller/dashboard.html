@@ -3,18 +3,18 @@
 {% block title %}Seller Dashboard | Gingerbread Marketplace{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-4 text-end">
-    <a href="{{ url_for('seller.inventory') }}" class="btn btn-primary">
-        <i class="fas fa-boxes"></i> Manage Inventory
-    </a>
-    <a href="{{ url_for('seller.orders') }}" class="btn btn-success">
-        <i class="fas fa-shipping-fast"></i> View Orders
-    </a>
-    <a href="{{ url_for('seller.product_analytics') }}" class="btn btn-info text-white">
-        <i class="fas fa-chart-line"></i> Analytics
-    </a>
-</div>
+<div class="row mb-4 justify-content-center">
+    <div class="col-md-auto d-flex gap-2">
+        <a href="{{ url_for('seller.inventory') }}" class="btn btn-primary">
+            <i class="fas fa-boxes"></i> Manage Inventory
+        </a>
+        <a href="{{ url_for('seller.orders') }}" class="btn btn-success">
+            <i class="fas fa-shipping-fast"></i> View Orders
+        </a>
+        <a href="{{ url_for('seller.product_analytics') }}" class="btn btn-info text-white">
+            <i class="fas fa-chart-line"></i> Analytics
+        </a>
+    </div>
 </div>
 
 <div class="row mb-4">

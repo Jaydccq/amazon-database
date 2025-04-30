@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask import flash, session, current_app, jsonify, app
 from functools import wraps
@@ -94,6 +96,13 @@ def inventory():
         category_id=category_id
     )
 
+    # change image path for each item
+    for item in inventory_items:
+        if item.image:
+            item.image = f"/static/uploads/{item.image}"
+        else:
+            item.image = "/static/uploads/image-default.png"
+
     # Get total count for pagination
     total_items = Inventory.count_for_seller(
         user_id,
@@ -126,6 +135,7 @@ def add_inventory():
     user_id = session['user_id']
 
     if request.method == 'POST':
+        # Existing POST logic remains unchanged
         product_id = request.form.get('product_id', type=int)
         quantity = request.form.get('quantity', type=int)
         unit_price = request.form.get('unit_price', type=float)
@@ -165,13 +175,12 @@ def add_inventory():
             flash('Failed to add product to inventory', 'error')
             return redirect(url_for('seller.add_inventory'))
 
-    # GET request - show form with available products
-
-    # GET request - show form with available products
-
+    # GET request handling with pagination
     # Get search parameters
     search_query = request.args.get('search', '')
     current_category = request.args.get('category_id', '')
+    page = request.args.get('page', 1, type=int)
+    per_page = 9  # 9 items (3x3 grid) per page
 
     # Get all products first
     all_products = Product.get_all()
@@ -196,11 +205,20 @@ def add_inventory():
     # Filter out products already in inventory
     available_products = [p for p in filtered_products if p.id not in existing_product_ids]
 
+    # Calculate total items and pages for pagination
+    total_items = len(available_products)
+    total_pages = (total_items + per_page - 1) // per_page
+
+    # Apply pagination - slice the available products
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paged_products = available_products[start_idx:end_idx]
+
     # Get categories for grouping products
     categories = {cat.id: cat.name for cat in Category.get_all()}
 
     # Make sure Product objects have the right attributes for the template
-    for p in available_products:
+    for p in paged_products:
         # Add id and name attributes if they don't exist
         if not hasattr(p, 'id'):
             p.id = p.product_id
@@ -209,10 +227,16 @@ def add_inventory():
 
     return render_template(
         'seller/add_inventory.html',
-        available_products=available_products,
+        available_products=paged_products,
         categories=categories,
         search_query=search_query,
-        current_category=current_category
+        current_category=current_category,
+        pagination={
+            'page': page,
+            'per_page': per_page,
+            'total': total_items,
+            'pages': total_pages
+        }
     )
 
 
@@ -297,26 +321,35 @@ def create_product():
     )
 
 
+# Modified edit_inventory route for seller.py that supports product editing
+
 @bp.route('/inventory/edit/<int:inventory_id>', methods=['GET', 'POST'])
 @seller_required
 def edit_inventory(inventory_id):
-    """Edit inventory item"""
+    """Edit inventory item and product details if owner"""
     user_id = session['user_id']
 
-    # Get inventory item
+    # Get inventory item with product details
     item = Inventory.get(inventory_id)
 
     if not item or item.seller_id != user_id:
         flash('Inventory item not found', 'error')
         return redirect(url_for('seller.inventory'))
 
+    # Check if the current seller is also the product owner
+    is_owner = (item.owner_id == user_id)
+
+    # Get categories for product editing
+    categories = Category.get_all() if is_owner else None
+
     if request.method == 'POST':
+        # Always process inventory updates
         quantity = request.form.get('quantity', type=int)
         unit_price = request.form.get('unit_price', type=float)
 
-        # Validate inputs
+        # Validate inventory inputs
         if quantity is None or unit_price is None:
-            flash('All fields are required', 'error')
+            flash('All inventory fields are required', 'error')
             return redirect(url_for('seller.edit_inventory', inventory_id=inventory_id))
 
         if quantity < 0:
@@ -327,11 +360,50 @@ def edit_inventory(inventory_id):
             flash('Price must be greater than zero', 'error')
             return redirect(url_for('seller.edit_inventory', inventory_id=inventory_id))
 
-        # Update inventory
+        # If seller is also the product owner, process product updates
+        if is_owner:
+            product_name = request.form.get('product_name')
+            category_id = request.form.get('category_id', type=int)
+            description = request.form.get('description')
+
+            # Validate product inputs
+            if not product_name or not description or not category_id:
+                flash('All product fields are required', 'error')
+                return redirect(url_for('seller.edit_inventory', inventory_id=inventory_id))
+
+            # Handle image upload if provided
+            image_url = None
+            if 'product_image' in request.files:
+                file = request.files['product_image']
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    # Generate unique filename
+                    unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+                    # Save the file
+                    upload_folder = current_app.config['UPLOAD_FOLDER']
+                    file_path = os.path.join(upload_folder, unique_filename)
+                    file.save(file_path)
+                    # Store the relative URL
+                    image_url = unique_filename
+
+            # Update product details if owner
+            product_updated = Product.update(
+                product_id=item.product_id,
+                category_id=category_id,
+                product_name=product_name,
+                description=description,
+                image=image_url if image_url else None  # Only update if new image was uploaded
+            )
+
+            if not product_updated:
+                flash('Failed to update product details', 'error')
+                return redirect(url_for('seller.edit_inventory', inventory_id=inventory_id))
+
+        # Update inventory details
         result = Inventory.update(inventory_id, user_id, quantity, unit_price)
 
         if result:
-            flash('Inventory updated', 'success')
+            flash('Inventory updated successfully', 'success')
             return redirect(url_for('seller.inventory'))
         else:
             flash('Failed to update inventory', 'error')
@@ -340,7 +412,9 @@ def edit_inventory(inventory_id):
     # GET request - show form
     return render_template(
         'seller/edit_inventory.html',
-        item=item
+        item=item,
+        is_owner=is_owner,
+        categories=categories
     )
 
 
@@ -411,6 +485,13 @@ def order_details(order_id):
 
     # Filter items to only show this seller's items
     seller_items = [item for item in order.items if item.seller_id == user_id]
+
+    # change image path
+    for item in seller_items:
+        if item.image:
+            item.image = f"/static/uploads/{item.image}"
+        else:
+            item.image = "/static/uploads/image-default.png"
 
     if not seller_items:
         flash('No items in this order belong to you', 'error')
