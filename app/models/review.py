@@ -3,11 +3,10 @@ from datetime import datetime
 
 class Review:
     # Initialize review object attributes
-    def __init__(self, review_id, user_id,user_name, comment, review_date, product_id, seller_id, rating, upvotes, downvotes, user_vote=None):
+    def __init__(self, review_id, user_id, comment, review_date, product_id, seller_id, rating, upvotes, downvotes, user_vote=None):
         self.review_id = review_id
         self.user_id = user_id
         self.comment = comment
-        self.user_name = user_name
         self.review_date = review_date
         self.product_id = product_id
         self.seller_id = seller_id

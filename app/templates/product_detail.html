@@ -317,7 +317,6 @@
                                             <i class="fas fa-star text-warning"></i>
                                             <i class="fas fa-star text-warning"></i>
                                         </div>
-                                        <small class="text-muted">Verified Purchase</small>
                                     </div>
                                     <small class="text-muted">March 15, 2024</small>
                                 </div>
@@ -481,131 +480,98 @@
 {#                </div>#}
 {#            </div>#}
 
-            <!-- Related Products Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h5 class="mb-0 fw-bold">You May Also Like</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <!-- Related Product 1 -->
-                        <a href="{{ url_for('product.product_detail', product_id=1) }}" class="list-group-item list-group-item-action px-0 py-3 border-bottom">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0" style="width: 60px; height: 60px;">
-                                    <div class="bg-light rounded w-100 h-100 d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                </div>
-                                <div class="ms-3">
-                                    <h6 class="mb-1 text-truncate">Similar Product One</h6>
-                                    <div class="d-flex align-items-center mb-1">
-                                        <div class="me-2">
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star-half-alt text-warning small"></i>
-                                        </div>
-                                        <small class="text-muted">4.5 (78)</small>
-                                    </div>
-                                    <span class="text-primary fw-medium">$24.99</span>
-                                </div>
-                            </div>
-                        </a>
-
-                        <!-- Related Product 2 -->
-                        <a href="{{ url_for('product.product_detail', product_id=2) }}" class="list-group-item list-group-item-action px-0 py-3 border-bottom">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0" style="width: 60px; height: 60px;">
-                                    <div class="bg-light rounded w-100 h-100 d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                </div>
-                                <div class="ms-3">
-                                    <h6 class="mb-1 text-truncate">Similar Product Two</h6>
-                                    <div class="d-flex align-items-center mb-1">
-                                        <div class="me-2">
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="far fa-star text-warning small"></i>
-                                        </div>
-                                        <small class="text-muted">4.0 (45)</small>
-                                    </div>
-                                    <span class="text-primary fw-medium">$19.99</span>
-                                </div>
-                            </div>
-                        </a>
-
-                        <!-- Related Product 3 -->
-                        <a href="{{ url_for('product.product_detail', product_id=3) }}" class="list-group-item list-group-item-action px-0 py-3">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0" style="width: 60px; height: 60px;">
-                                    <div class="bg-light rounded w-100 h-100 d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                </div>
-                                <div class="ms-3">
-                                    <h6 class="mb-1 text-truncate">Similar Product Three</h6>
-                                    <div class="d-flex align-items-center mb-1">
-                                        <div class="me-2">
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                            <i class="fas fa-star text-warning small"></i>
-                                        </div>
-                                        <small class="text-muted">5.0 (32)</small>
-                                    </div>
-                                    <span class="text-primary fw-medium">$29.99</span>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-
-                    <a href="{{ url_for('index.index') }}" class="btn btn-outline-primary w-100 mt-3">
-                        <i class="fas fa-search me-1"></i> View More Similar Products
-                    </a>
-                </div>
-            </div>
-
-            <!-- Recently Viewed -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h5 class="mb-0 fw-bold">Recently Viewed</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row row-cols-2 g-2">
-                        <!-- Recently Viewed 1 -->
-                        <div class="col">
-                            <a href="{{ url_for('product.product_detail', product_id=4) }}" class="text-decoration-none">
-                                <div class="card h-100 border">
-                                    <div class="bg-light d-flex align-items-center justify-content-center p-2" style="height: 80px;">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                    <div class="card-body p-2">
-                                        <p class="mb-0 text-truncate small">Product Name</p>
-                                        <span class="text-primary small">$15.99</span>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <!-- Recently Viewed 2 -->
-                        <div class="col">
-                            <a href="{{ url_for('product.product_detail', product_id=5) }}" class="text-decoration-none">
-                                <div class="card h-100 border">
-                                    <div class="bg-light d-flex align-items-center justify-content-center p-2" style="height: 80px;">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                    <div class="card-body p-2">
-                                        <p class="mb-0 text-truncate small">Product Name</p>
-                                        <span class="text-primary small">$22.50</span>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
+{#            <!-- Related Products Card -->#}
+{#            <div class="card shadow-sm mb-4">#}
+{#                <div class="card-header bg-white py-3 border-bottom">#}
+{#                    <h5 class="mb-0 fw-bold">You May Also Like</h5>#}
+{#                </div>#}
+{#                <div class="card-body">#}
+{#                    <div class="list-group list-group-flush">#}
+{#                        {% if related_products %}#}
+{#                            {% for product in related_products %}#}
+{#                                <a href="{{ url_for('product.product_detail', product_id=product.id) }}" class="list-group-item list-group-item-action px-0 py-3 {% if not loop.last %}border-bottom{% endif %}">#}
+{#                                    <div class="d-flex">#}
+{#                                        <div class="flex-shrink-0" style="width: 60px; height: 60px;">#}
+{#                                            {% if product.image %}#}
+{#                                                <img src="{{ product.image }}" alt="{{ product.name }}" class="img-fluid rounded h-100 w-100 object-fit-cover">#}
+{#                                            {% else %}#}
+{#                                                <div class="bg-light rounded w-100 h-100 d-flex align-items-center justify-content-center">#}
+{#                                                    <i class="fas fa-image text-muted"></i>#}
+{#                                                </div>#}
+{#                                            {% endif %}#}
+{#                                        </div>#}
+{#                                        <div class="ms-3">#}
+{#                                            <h6 class="mb-1 text-truncate">{{ product.name }}</h6>#}
+{#                                            <div class="d-flex align-items-center mb-1">#}
+{#                                                <div class="me-2">#}
+{#                                                    {% set rating = product.rating_avg|default(0)|float %}#}
+{#                                                    {% for i in range(5) %}#}
+{#                                                        {% if i < rating|int %}#}
+{#                                                            <i class="fas fa-star text-warning small"></i>#}
+{#                                                        {% elif i == rating|int and rating % 1 >= 0.5 %}#}
+{#                                                            <i class="fas fa-star-half-alt text-warning small"></i>#}
+{#                                                        {% else %}#}
+{#                                                            <i class="far fa-star text-warning small"></i>#}
+{#                                                        {% endif %}#}
+{#                                                    {% endfor %}#}
+{#                                                </div>#}
+{#                                                <small class="text-muted">{{ "%.1f"|format(rating) }} ({{ product.review_count|default(0) }})</small>#}
+{#                                            </div>#}
+{#                                            <span class="text-primary fw-medium">${{ "%.2f"|format(product.price|default(0)) }}</span>#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </a>#}
+{#                            {% endfor %}#}
+{#                        {% else %}#}
+{#                            <div class="text-center py-4">#}
+{#                                <i class="fas fa-box-open fa-2x text-muted mb-2"></i>#}
+{#                                <p class="text-muted mb-0">No related products found</p>#}
+{#                            </div>#}
+{#                        {% endif %}#}
+{#                    </div>#}
+{#            #}
+{#                    <a href="{{ url_for('product.category', category_id=product.category_id) }}" class="btn btn-outline-primary w-100 mt-3">#}
+{#                        <i class="fas fa-search me-1"></i> View More in {{ product.category_name }}#}
+{#                    </a>#}
+{#                </div>#}
+{#            </div>#}
+{##}
+{#            <!-- Recently Viewed -->#}
+{#            <div class="card shadow-sm">#}
+{#                <div class="card-header bg-white py-3 border-bottom">#}
+{#                    <h5 class="mb-0 fw-bold">Recently Viewed</h5>#}
+{#                </div>#}
+{#                <div class="card-body">#}
+{#                    <div class="row row-cols-2 g-2">#}
+{#                        <!-- Recently Viewed 1 -->#}
+{#                        <div class="col">#}
+{#                            <a href="{{ url_for('product.product_detail', product_id=4) }}" class="text-decoration-none">#}
+{#                                <div class="card h-100 border">#}
+{#                                    <div class="bg-light d-flex align-items-center justify-content-center p-2" style="height: 80px;">#}
+{#                                        <i class="fas fa-image text-muted"></i>#}
+{#                                    </div>#}
+{#                                    <div class="card-body p-2">#}
+{#                                        <p class="mb-0 text-truncate small">Product Name</p>#}
+{#                                        <span class="text-primary small">$15.99</span>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </a>#}
+{#                        </div>#}
+{##}
+{#                        <!-- Recently Viewed 2 -->#}
+{#                        <div class="col">#}
+{#                            <a href="{{ url_for('product.product_detail', product_id=5) }}" class="text-decoration-none">#}
+{#                                <div class="card h-100 border">#}
+{#                                    <div class="bg-light d-flex align-items-center justify-content-center p-2" style="height: 80px;">#}
+{#                                        <i class="fas fa-image text-muted"></i>#}
+{#                                    </div>#}
+{#                                    <div class="card-body p-2">#}
+{#                                        <p class="mb-0 text-truncate small">Product Name</p>#}
+{#                                        <span class="text-primary small">$22.50</span>#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            </a>#}
+{#                        </div>#}
                     </div>
                 </div>
             </div>
