@@ -4,7 +4,7 @@ The Gingerbread Standard Project is a web-based e-commerce platform designed to 
 
 This project is being developed collaboratively by a team of five, each specializing in a different aspect of the system.
 
-Milestone 4 demo video: 
+Final milestone demo video: 
 https://youtu.be/t9DdCd9d8x0
 
 GitLab Repository:
@@ -18,9 +18,9 @@ Users Guru (Hongyi Duan): responsible for Account / Purchases
     ii. User Profile Management: Allows users to edit their profile details (email, name, address, password).
     iii. Balance Management: Implemented top-up, withdrawal, and transaction history tracking.
 2. Created the README.txt and documented the project details.
-3. Designed the Entity-Relationship Diagram (ERD) that integrates all database tables.
-4. Implement search/filter functionality for purchase history by item, seller, date, etc.
-5. Set up and managed the project GitLab repository.
+3. Implement search/filter functionality for purchase history by item, seller, date, etc.
+4. Set up and managed the project GitLab repository.
+5. Designed all the web pages.
 
 Products Guru (Jiaxin Gao): responsible for Products
 1. Designed the Products table, identifying ProductID as the primary key.
@@ -30,6 +30,7 @@ Products Guru (Jiaxin Gao): responsible for Products
     ii. Viewing detailed product information.
     iii. Managing product availability by different sellers.
 4. Implement low stock warning in the seller dashboard if a product's available quantity is below 5, marked as "low stock" in red font.
+5. Designed the Entity-Relationship Diagram (ERD) that integrates all database tables.
 
 Carts Guru (Yizhe Chen): responsible for Cart / Order
 1. Designed the Orders table, with OrderID as the primary key.
