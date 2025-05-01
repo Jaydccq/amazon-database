@@ -7,7 +7,6 @@ from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from .models.user import User
 from flask import Blueprint, current_app as app
-
 bp = Blueprint('users', __name__)
 
 # psql -h localhost -p 15432 -U miniamazon -d miniamazon
@@ -135,11 +134,71 @@ def become_seller():
     if User.make_seller(current_user.id):
         # Update the current_user object in the session
         current_user.is_seller = True
-        # Optional: Update Flask session variable if you use it elsewhere
-        # from flask import session
-        # session['is_seller'] = True
+
         flash('Congratulations! You are now registered as a seller.', 'success')
     else:
         flash('An error occurred while updating your account. Please try again.', 'danger')
+
+    return redirect(url_for('users.profile'))
+
+@bp.route('/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    email = request.form.get('email')
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
+    address = request.form.get('address') # Make sure address field exists in form
+
+    # Basic validation
+    if not email or not first_name or not last_name or not address:
+         flash('All profile fields are required.', 'warning')
+         return redirect(url_for('users.profile'))
+
+    existing_user = User.get_by_email(email)
+    if existing_user and existing_user.id != current_user.id:
+        flash('Email address is already in use by another account.', 'danger')
+        return redirect(url_for('users.profile'))
+
+    if User.update_profile(current_user.id, email, first_name, last_name, address):
+        flash('Your profile has been updated successfully!', 'success')
+    else:
+        flash('An error occurred while updating your profile. Please try again.', 'danger')
+
+    return redirect(url_for('users.profile'))
+
+
+# Route to handle password change submission
+@bp.route('/profile/change-password', methods=['POST'])
+@login_required
+def change_password():
+    current_password = request.form.get('current_password')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if not current_password or not new_password or not confirm_password:
+        flash('Please fill in all password fields.', 'warning')
+        return redirect(url_for('users.profile'))
+
+    # Verify current password
+    # Assuming current_user is fetched correctly by Flask-Login and has check_password
+    if not current_user.check_password(current_password):
+        flash('Incorrect current password.', 'danger')
+        return redirect(url_for('users.profile'))
+
+    # Check if new password and confirmation match
+    if new_password != confirm_password:
+        flash('New password and confirmation do not match.', 'warning')
+        return redirect(url_for('users.profile'))
+
+    # Check password complexity (optional but recommended)
+    if len(new_password) < 8: # Example minimum length
+        flash('New password must be at least 8 characters long.', 'warning')
+        return redirect(url_for('users.profile'))
+
+    # Update the password
+    if User.update_password(current_user.id, new_password):
+        flash('Your password has been updated successfully!', 'success')
+    else:
+        flash('An error occurred while changing your password. Please try again.', 'danger')
 
     return redirect(url_for('users.profile'))

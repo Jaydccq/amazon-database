@@ -4,7 +4,7 @@ from app.models.cart import Cart
 from app.models.inventory import Inventory
 from flask import current_app as app # For logger
 
-bp = Blueprint("cart", __name__, url_prefix="/cart")
+bp = Blueprint('cart', __name__, url_prefix='/cart')
 
 @bp.route('/checkout', methods=['POST'])
 @login_required

@@ -167,9 +167,9 @@
                                                 </div>
                                             </form>
                                             {% else %}
-                                            <a href="{{ url_for('users.login') }}" class="btn btn-outline-primary">
-                                                <i class="fas fa-sign-in-alt me-1"></i> Login to Purchase
-                                            </a>
+                                                <button type="button" class="btn btn-outline-primary" onclick="window.location.href='{{ url_for('users.login') }}';">
+                                                    <i class="fas fa-sign-in-alt me-1"></i> Login to Purchase
+                                                </button>
                                             {% endif %}
                                         </div>
                                     </div>

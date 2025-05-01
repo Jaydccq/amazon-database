@@ -2,8 +2,7 @@
 from flask import render_template, request, flash, app, redirect, url_for
 from flask_login import login_required, current_user
 from .models.orders import OrderItem
-import datetime
-
+from datetime import datetime
 from .models.orders import Order
 from .models.product import Product
 
