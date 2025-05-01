@@ -5,12 +5,10 @@
 {% block content %}
 <div class="container mt-4">
 
-    {# Display flash messages directly here #}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          {# Map Flask categories to Bootstrap alert classes #}
-          {% set alert_class = 'alert-info' %} {# Default #}
+          {% set alert_class = 'alert-info' %}
           {% if category == 'danger' %}
             {% set alert_class = 'alert-danger' %}
           {% elif category == 'success' %}
@@ -25,7 +23,6 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-    {# End of flash message display #}
 
     <div class="row">
         <div class="col-lg-4 mb-4">
@@ -49,13 +46,16 @@
                     <hr>
 
                     <h6><i class="fas fa-wallet me-2"></i>Current Balance</h6>
-                    <h3 class="text-primary mb-3">${{ "%.2f"|format(user.current_balance) }}</h3>
+                    <h3 class="text-primary mb-3">${{ "%.2f"|format(user.current_balance|float) }}</h3>
 
                     {% if current_user.id == user.id %}
                     <div class="d-grid gap-2">
                         <a href="{{ url_for('users.topup') }}" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-plus-circle"></i> Top Up Balance
                         </a>
+                         <a href="{{ url_for('users.withdraw') }}" class="btn btn-sm btn-outline-danger">
+                             <i class="fas fa-minus-circle"></i> Withdraw Balance
+                         </a>
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                             <i class="fas fa-edit"></i> Edit Profile Details
                         </button>
@@ -69,7 +69,6 @@
         </div>
 
         <div class="col-lg-8">
-            {# Only show "My Activity" if viewing own profile #}
             {% if current_user.id == user.id %}
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
@@ -92,7 +91,6 @@
             </div>
             {% endif %}
 
-            {# Seller Dashboard Section or Become Seller Option #}
             {% if user.is_seller %}
             <div class="card mb-4">
                 <div class="card-header bg-success text-white">
@@ -111,14 +109,8 @@
                         <span><i class="fas fa-shipping-fast me-2 text-success"></i>Orders to Fulfill</span>
                          <i class="fas fa-chevron-right text-muted"></i>
                      </a>
-                     {# Make sure seller.analytics route exists if you uncomment this #}
-                     {# <a href="{{ url_for('seller.analytics') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-chart-bar me-2 text-success"></i>Sales Analytics</span>
-                        <i class="fas fa-chevron-right text-muted"></i>
-                    </a> #}
                 </div>
             </div>
-            {# Option to become a seller - only show if viewing own profile and not already a seller #}
             {% elif current_user.id == user.id %}
             <div class="card">
                 <div class="card-header bg-info text-white">
@@ -209,5 +201,4 @@
 
 {% block scripts %}
 {{ super() }}
-{# Add any specific JS needed for the profile page if necessary #}
 {% endblock %}

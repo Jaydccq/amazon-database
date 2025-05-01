@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block title %}Withdraw Balance | Gingerbread Marketplace{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            {# Display flash messages #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  {% set alert_class = 'alert-info' %} {# Default #}
+                  {% if category == 'danger' %}
+                    {% set alert_class = 'alert-danger' %}
+                  {% elif category == 'success' %}
+                    {% set alert_class = 'alert-success' %}
+                  {% elif category == 'warning' %}
+                    {% set alert_class = 'alert-warning' %}
+                  {% endif %}
+                  <div class="alert {{ alert_class }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+            {# End flash messages #}
+
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white"> {# Changed style #}
+                    <h4 class="mb-0"><i class="fas fa-minus-circle me-2"></i>Withdraw Balance</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 text-center">
+                        <h5>Available Balance</h5>
+                        {# Use the passed 'current_balance' variable which is pre-formatted #}
+                        <h2 class="text-primary">${{ current_balance }}</h2>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('users.withdraw') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Amount to Withdraw ($)</label>
+                            {# Use the passed 'current_balance' for the max attribute #}
+                            {# Ensure WTForms renders the input correctly, might need Jinja filter #}
+                            {{ form.amount(class="form-control", placeholder="Enter amount", min="0.01", step="0.01", type="number", max=current_balance|float) }}
+                            {% if form.amount.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.amount.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {# Display maximum withdrawable amount #}
+                            <div class="form-text">Maximum withdrawal: ${{ current_balance }}</div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-danger btn-lg") }} {# Changed style #}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('users.profile') }}" class="text-decoration-none">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
