@@ -296,7 +296,7 @@ def create_product():
                 file_path = os.path.join(upload_folder, unique_filename)
                 file.save(file_path)
                 # Store the relative URL
-                image_url = f"/static/uploads/{unique_filename}"
+                image_url = f"{unique_filename}"
 
         # Create the product
         product = Product.create(
