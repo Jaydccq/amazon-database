@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, session
 from urllib.parse import urlsplit as url_parse
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
@@ -134,6 +134,7 @@ def become_seller():
     if User.make_seller(current_user.id):
         # Update the current_user object in the session
         current_user.is_seller = True
+        session['is_seller'] = True
 
         flash('Congratulations! You are now registered as a seller.', 'success')
     else:
