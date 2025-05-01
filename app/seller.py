@@ -84,6 +84,13 @@ def inventory():
     search = request.args.get('search')
     category_id = request.args.get('category_id')
 
+    # Convert category_id to int if present
+    if category_id:
+        try:
+            category_id = int(category_id)
+        except ValueError:
+            category_id = None
+
     # Items per page
     per_page = 10
 
@@ -110,8 +117,9 @@ def inventory():
         category_id=category_id
     )
 
-    # Get categories for filter dropdown
-    categories = Category.get_all()
+    # For consistency with add_inventory, convert categories to a dictionary
+    categories_list = Category.get_all()
+    categories = {cat.id: cat.name for cat in categories_list}
 
     return render_template(
         'seller/inventory.html',
@@ -126,7 +134,6 @@ def inventory():
             'pages': (total_items + per_page - 1) // per_page
         }
     )
-
 
 @bp.route('/inventory/add', methods=['GET', 'POST'])
 @seller_required
