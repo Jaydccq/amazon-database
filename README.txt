@@ -19,7 +19,8 @@ Users Guru (Hongyi Duan): responsible for Account / Purchases
     iii. Balance Management: Implemented top-up, withdrawal, and transaction history tracking.
 2. Created the README.txt and documented the project details.
 3. Designed the Entity-Relationship Diagram (ERD) that integrates all database tables.
-4. Set up and managed the project GitLab repository.
+4. Implement search/filter functionality for purchase history by item, seller, date, etc.
+5. Set up and managed the project GitLab repository.
 
 Products Guru (Jiaxin Gao): responsible for Products
 1. Designed the Products table, identifying ProductID as the primary key.
@@ -28,6 +29,7 @@ Products Guru (Jiaxin Gao): responsible for Products
     i. Product search, filtering, and sorting.
     ii. Viewing detailed product information.
     iii. Managing product availability by different sellers.
+4. Implement low stock warning in the seller dashboard if a product's available quantity is below 5, marked as "low stock" in red font.
 
 Carts Guru (Yizhe Chen): responsible for Cart / Order
 1. Designed the Orders table, with OrderID as the primary key.
@@ -36,7 +38,7 @@ Carts Guru (Yizhe Chen): responsible for Cart / Order
     i. Cart Management: Users can add/remove items and adjust quantities.
     ii. Order Processing: Checkout system and order confirmation.
     iii. Order Tracking: Users can reorder items, track status, and request refunds.
-
+4. Divide the cart into "in cart" and "saved for later" sections, allowing users to check out certain items and save others for later.
 
 Sellers Guru (Zhikang Song): responsible for Inventory / Order Fulfillment
 1. Designed the Inventory table, allowing seller users to:
@@ -47,6 +49,7 @@ Sellers Guru (Zhikang Song): responsible for Inventory / Order Fulfillment
 3. Developed functionalities for:
     i. Seller Dashboard: Manage products and track orders.
     ii. Order Fulfillment: View buyer details and mark orders as fulfilled.
+4. Add visualization/analytics to the inventory and/or order fulfillment pages to show product popularity and trends.
 
 Social Guru (Hongxi Chen): responsible for Feedback / Messaging
 1. Implemented the User Reviews system, enabling users to:
@@ -57,6 +60,7 @@ Social Guru (Hongxi Chen): responsible for Feedback / Messaging
     i. Viewing seller reviews.
     ii. Contacting sellers for inquiries.
 3. Worked on messaging and feedback systems to enhance user interaction.
+4. Implement upvote functionality for reviews, allowing users to mark reviews as more or less helpful, with top 3 helpful reviews shown first.
 
 
 ## Project Structure
