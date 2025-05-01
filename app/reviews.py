@@ -149,39 +149,49 @@ def edit_review(review_id): # Handle editing own review
     return render_template('edit_review.html', review=review)
 
 
-
-
-
 @bp.route('/reviews/product/<int:product_id>')
-def product_reviews(product_id): # Display product reviews page
-    product = Product.get(product_id) # Get product details
+def product_reviews(product_id):
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # 10 reviews per page
+
+    product = Product.get(product_id)
     if not product:
         flash('Product not found!')
         return redirect(url_for('index.index'))
 
     # Get current user ID safely
     current_user_id = current_user.id if current_user.is_authenticated else None
-    # Fetch reviews (sorted by model)
-    reviews = Review.get_product_review(product_id, current_user_id)
+
+    # Get total number of reviews for this product
+    all_reviews = Review.get_product_review(product_id, current_user_id)
+
+    # Calculate total pages
+    total_reviews = len(all_reviews)
+    total_pages = (total_reviews + per_page - 1) // per_page
+
+    # Get only reviews for current page
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_reviews = all_reviews[start_idx:end_idx]
 
     # Get average rating/count
     avg_rating, review_count = Review.get_avg_rating_product(product_id)
 
     # Calculate rating distribution
     rating_distribution = {star: 0 for star in range(1, 6)}
-    # Fetch all just for distribution
-    all_reviews_for_dist = Review.get_product_review(product_id)
-    for r in all_reviews_for_dist:
-         if 1 <= r.rating <= 5: # Check rating is valid
-             rating_distribution[r.rating] += 1
+    for r in all_reviews:
+        if 1 <= r.rating <= 5:
+            rating_distribution[r.rating] += 1
 
-    # Render product reviews template
     return render_template('product_reviews.html',
                            product=product,
-                           reviews=reviews, # Pass sorted reviews
+                           reviews=paginated_reviews,
                            avg_rating=avg_rating,
                            review_count=review_count,
-                           rating_distribution=rating_distribution)
+                           rating_distribution=rating_distribution,
+                           page=page,
+                           total_pages=total_pages,
+                           per_page=per_page)
 
 
 @bp.route('/reviews/seller/<int:seller_id>')

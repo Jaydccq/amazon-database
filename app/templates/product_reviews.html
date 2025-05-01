@@ -3,75 +3,435 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/reviews.css') }}">
     <style>
-        .vote-btn {
-            color: #6c757d;
-            margin: 0 5px;
-            background: none;
+        :root {
+            --primary-color: #4a6cf7;
+            --primary-light: #e8eeff;
+            --secondary-color: #ff9800;
+            --text-dark: #2c3e50;
+            --text-light: #6c757d;
+            --border-color: #e7eaf3;
+            --success-color: #42ba96;
+            --danger-color: #df4759;
+            --star-color: #ffc107;
+            --card-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            --hover-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            color: var(--text-dark);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        .card {
             border: none;
-            padding: 2px 5px;
-            border-radius: 3px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
-        .vote-btn:hover {
-            background-color: #f8f9fa;
+
+        .card:hover {
+            box-shadow: var(--hover-shadow);
         }
-        .vote-btn.active {
-            color: #007bff;
-            background-color: #e7f1ff;
+
+        .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.2rem;
         }
-        .vote-btn.down.active {
-            color: #dc3545;
-            background-color: #f8d7da;
+
+        .sticky-top {
+            top: 20px;
+            z-index: 999;
         }
-        .helpfulness-score {
-            font-size: 0.9em;
-            color: #6c757d;
-            margin-left: 10px;
+
+        /* Product Info Card */
+        .product-info-card img {
+            max-height: 180px;
+            object-fit: contain;
+            transition: transform 0.3s ease;
         }
+
+        .product-info-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .product-info-card h4 a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .product-info-card h4 a:hover {
+            color: var(--primary-color);
+        }
+
+        /* Rating Summary */
+        .rating-summary {
+            background-color: var(--primary-light);
+            border-radius: 10px;
+            padding: 1.2rem;
+            position: relative;
+        }
+
+        .rating-summary .h2 {
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stars i {
+            color: var(--star-color);
+            margin-right: 2px;
+        }
+
+        /* Review Cards */
+        .review-list {
+            padding: 0;
+        }
+
         .review-card {
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem;
+            transition: background-color 0.2s ease;
         }
+
+        .review-card:hover {
+            background-color: rgba(74, 108, 247, 0.02);
+        }
+
         .review-card:last-child {
             border-bottom: none;
         }
-        .stars i {
-            color: #ffc107;
+
+        .review-header {
+            margin-bottom: 1rem;
         }
+
         .review-author a {
-            font-weight: bold;
-            color: #007bff;
+            font-weight: 600;
+            color: var(--primary-color);
             text-decoration: none;
         }
+
         .review-author a:hover {
             text-decoration: underline;
+        }
+
+        .review-date {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            margin-left: 8px;
+        }
+
+        .review-rating {
+            display: inline-flex;
+            align-items: center;
+            background-color: var(--primary-light);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .review-rating i {
+            font-size: 0.85rem;
+            margin-right: 1px;
+        }
+
+        .review-body {
+            margin-bottom: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .review-text {
+            margin-bottom: 0;
+            color: var(--text-dark);
+        }
+
+        /* Vote buttons */
+        .vote-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .vote-btn {
+            display: inline-flex;
+            align-items: center;
+            color: var(--text-light);
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-right: 10px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .vote-btn i {
+            margin-right: 5px;
+        }
+
+        .vote-btn:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .vote-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .vote-btn.down.active {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        .helpfulness-score {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        /* Action buttons */
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.85rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .edit-btn {
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+            margin-right: 8px;
+        }
+
+        .edit-btn:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .delete-btn {
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            background-color: rgba(223, 71, 89, 0.1);
+        }
+
+        .delete-btn:hover {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        /* Progress bars */
+        .rating-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            margin: 0 10px;
+        }
+
+        .rating-bar .progress-bar {
+            background-color: var(--star-color);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pagination {
+            margin-bottom: 0;
+        }
+
+        .page-item .page-link {
+            border: none;
+            color: var(--text-dark);
+            padding: 8px 16px;
+            margin: 0 3px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .page-item .page-link:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 10px rgba(74, 108, 247, 0.2);
+        }
+
+        .page-item.disabled .page-link {
+            color: var(--text-light);
+            opacity: 0.6;
+        }
+
+        /* Empty state */
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--text-light);
+            opacity: 0.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h4 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #3a5dd9;
+            border-color: #3a5dd9;
+            box-shadow: 0 6px 15px rgba(74, 108, 247, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--border-color);
+            color: var(--text-dark);
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--primary-light);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        /* Alerts */
+        .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Rating distribution specific styling */
+        .rating-distribution-card {
+            transition: all 0.3s ease;
+        }
+
+        .rating-distribution-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .star-rating-row {
+            transition: all 0.2s ease;
+            padding: 5px 0;
+            border-radius: 6px;
+        }
+
+        .star-rating-row:hover {
+            background-color: rgba(255, 193, 7, 0.1);
+        }
+
+        .star-label {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .star-icon {
+            color: var(--star-color);
+            font-size: 0.75rem;
+            margin-left: 3px;
+        }
+
+        .star-count {
+            font-weight: 500;
+            text-align: right;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767.98px) {
+            .card-header {
+                padding: 1rem;
+            }
+
+            .review-card {
+                padding: 1.2rem 1rem;
+            }
+
+            .sticky-top {
+                position: relative;
+                top: 0 !important;
+            }
         }
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <div class="row">
             <div class="col-md-4">
-                <div class="card mb-4 sticky-top" style="top: 20px;">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Product Information</h5>
+                <!-- Product Info Card -->
+                <div class="card mb-4 sticky-top product-info-card fade-in" style="top: 20px;">
+                    <div class="card-header">
+                        <h5 class="mb-0 d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2" style="color: var(--primary-color);"></i>
+                            Product Information
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-4">
                             {% if product.image %}
-                                <img src="{{ product.image }}" alt="{{ product.product_name }}" class="img-fluid rounded mb-3"
-                                     style="max-height: 150px;">
+                                <img src="{{ product.image }}" alt="{{ product.product_name }}" class="img-fluid rounded mb-3">
                             {% else %}
                                 <div class="bg-light text-center rounded mb-3 py-5">
                                     <i class="fas fa-box fa-3x text-muted"></i>
                                 </div>
                             {% endif %}
                             <h4><a href="{{ url_for('product.product_detail', product_id=product.id) }}">{{ product.product_name }}</a></h4>
-                            <p class="text-muted">{{ product.category_name }}</p>
+                            <p class="text-muted">
+                                <i class="fas fa-tag me-1"></i>
+                                {{ product.category_name }}
+                            </p>
                         </div>
 
-                        <div class="rating-summary p-3 bg-light rounded mb-3">
+                        <div class="rating-summary mb-4">
                             <div class="d-flex align-items-center mb-2">
-                                <div class="h2 mb-0 mr-2">{{ "%.1f"|format(avg_rating|float) }}</div>
+                                <div class="h2 mb-0 me-3">{{ "%.1f"|format(avg_rating|float) }}</div>
                                 <div class="stars">
                                     {% set avg_rating_val = avg_rating|float %}
                                     {% for i in range(1, 6) %}
@@ -85,7 +445,10 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                            <p class="mb-0 text-muted">{{ review_count }} review{% if review_count != 1 %}s{% endif %}</p>
+                            <p class="mb-0 text-muted">
+                                <i class="fas fa-comment-dots me-1"></i>
+                                {{ review_count }} review{% if review_count != 1 %}s{% endif %}
+                            </p>
                         </div>
 
                         {% if current_user.is_authenticated %}
@@ -100,26 +463,32 @@
                                 {% if not has_reviewed %}
                                     <a href="{{ url_for('reviews.add_review', product_id=product.id) }}"
                                        class="btn btn-primary btn-block">
-                                        <i class="fas fa-star"></i> Write a Review
+                                        <i class="fas fa-star me-1"></i> Write a Review
                                     </a>
                                 {% else %}
-                                    <button class="btn btn-secondary btn-block" disabled>You've already reviewed</button>
+                                    <button class="btn btn-secondary btn-block" disabled>
+                                        <i class="fas fa-check-circle me-1"></i> You've already reviewed
+                                    </button>
                                 {% endif %}
                                 <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
                                    class="btn btn-outline-secondary btn-block mt-2">
-                                    <i class="fas fa-arrow-left"></i> Back to Product
+                                    <i class="fas fa-arrow-left me-1"></i> Back to Product
                                 </a>
                             </div>
                         {% else %}
-                            <p class="text-center text-muted mt-3"><a href="{{ url_for('users.login') }}">Log in</a> to write a review or vote a review.</p>
-                             <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
-                                class="btn btn-outline-secondary btn-block mt-2">
-                                <i class="fas fa-arrow-left"></i> Back to Product
+                            <div class="alert alert-light text-center" role="alert">
+                                <i class="fas fa-lock me-1"></i>
+                                <a href="{{ url_for('users.login') }}">Log in</a> to write a review or vote.
+                            </div>
+                            <a href="{{ url_for('product.product_detail', product_id=product.id) }}"
+                               class="btn btn-outline-secondary btn-block mt-2">
+                                <i class="fas fa-arrow-left me-1"></i> Back to Product
                             </a>
                         {% endif %}
                     </div>
                 </div>
 
+                <!-- REPLACEMENT: Rating Distribution Card from the second version -->
                 <div class="card mb-4 sticky-top" style="top: 350px;">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">Rating Distribution</h5>
@@ -143,50 +512,66 @@
             </div>
 
             <div class="col-md-8">
+                <!-- Flash Messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            <div class="alert alert-{{ category }} alert-dismissible fade show fade-in" role="alert">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
                                 {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
 
-                <div class="card mb-4">
-                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Customer Reviews ({{ review_count }})</h4>
-                        <small class="text-muted">Showing most helpful first</small>
+                <!-- Reviews Card -->
+                <div class="card mb-4 fade-in" style="animation-delay: 0.2s;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0 d-flex align-items-center">
+                            <i class="fas fa-comment-alt me-2" style="color: var(--primary-color);"></i>
+                            Customer Reviews <span class="badge badge-pill bg-light text-dark ms-2">{{ review_count }}</span>
+                        </h4>
+                        <div class="text-muted d-flex align-items-center">
+                            <i class="fas fa-sort me-1"></i>
+                            <small>Showing most helpful first</small>
+                        </div>
                     </div>
+
                     <div class="card-body p-0">
                         {% if reviews %}
-                            <ul class="list-group list-group-flush">
+                            <ul class="list-group list-group-flush review-list">
                             {% for review in reviews %}
-                                <li class="list-group-item review-card py-3 px-3" id="review-{{ review.review_id }}">
-                                    <div class="review-header d-flex justify-content-between align-items-center mb-2">
+                                <li class="list-group-item review-card fade-in" style="animation-delay: {{ loop.index * 0.05 + 0.2 }}s;" id="review-{{ review.review_id }}">
+                                    <div class="review-header d-flex justify-content-between align-items-start">
                                         <div class="review-author">
-                                             <a href="{{ url_for('reviews.user_reviews', user_id=review.user_id) }}">User {{ review.user_id }}</a>
-                                            <small class="text-muted ml-2">{{ review.review_date.strftime('%B %d, %Y') }}</small>
+                                            <a href="{{ url_for('reviews.user_reviews', user_id=review.user_id) }}">
+                                                <i class="fas fa-user-circle me-1"></i>
+                                                User {{ review.user_id }}
+                                            </a>
+                                            <span class="review-date">
+                                                <i class="far fa-calendar-alt me-1"></i>
+                                                {{ review.review_date.strftime('%B %d, %Y') }}
+                                            </span>
                                         </div>
-                                        <div class="stars">
+
+                                        <div class="review-rating">
                                             {% for i in range(1, 6) %}
                                                 <i class="{% if i <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
                                             {% endfor %}
                                         </div>
                                     </div>
-                                    <div class="review-body mb-2">
-                                        <p class="review-text mb-1">{{ review.comment }}</p>
+
+                                    <div class="review-body">
+                                        <p class="review-text">{{ review.comment }}</p>
                                     </div>
+
                                     <div class="review-footer d-flex justify-content-between align-items-center">
-                                        <div class="d-flex align-items-center vote-container">
+                                        <div class="vote-container">
                                             {% if current_user.is_authenticated %}
                                                 {% set can_vote = current_user.id != review.user_id %}
 
-                                                <!-- 使用表单代替AJAX -->
-                                                <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline mr-2">
+                                                <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline">
                                                     <input type="hidden" name="vote_type" value="1">
                                                     <button type="submit" class="vote-btn {% if review.user_vote == 1 %}active{% endif %}"
                                                             {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
@@ -194,7 +579,7 @@
                                                     </button>
                                                 </form>
 
-                                                <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline mr-2">
+                                                <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline">
                                                     <input type="hidden" name="vote_type" value="-1">
                                                     <button type="submit" class="vote-btn down {% if review.user_vote == -1 %}active{% endif %}"
                                                             {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
@@ -203,17 +588,19 @@
                                                 </form>
 
                                                 <span class="helpfulness-score">
-                                                    ({{ review.upvotes - review.downvotes }}) helpful
+                                                    <i class="fas fa-award me-1"></i>
+                                                    {{ review.upvotes - review.downvotes }} helpful
                                                 </span>
                                             {% else %}
-                                                <span class="mr-2">
+                                                <button type="button" class="vote-btn" disabled>
                                                     <i class="fas fa-thumbs-up"></i> {{ review.upvotes }}
-                                                </span>
-                                                <span class="mr-2">
+                                                </button>
+                                                <button type="button" class="vote-btn down" disabled>
                                                     <i class="fas fa-thumbs-down"></i> {{ review.downvotes }}
-                                                </span>
+                                                </button>
                                                 <span class="helpfulness-score">
-                                                    ({{ review.upvotes - review.downvotes }}) helpful
+                                                    <i class="fas fa-award me-1"></i>
+                                                    {{ review.upvotes - review.downvotes }} helpful
                                                 </span>
                                             {% endif %}
                                         </div>
@@ -221,15 +608,14 @@
                                         {% if current_user.is_authenticated and current_user.id == review.user_id %}
                                             <div>
                                                 <a href="{{ url_for('reviews.edit_review', review_id=review.review_id) }}"
-                                                   class="btn btn-sm btn-outline-secondary py-0 px-1" title="Edit your review">
-                                                    <i class="fas fa-edit fa-xs"></i> <small>Edit</small>
+                                                   class="btn action-btn edit-btn">
+                                                    <i class="fas fa-edit me-1"></i> Edit
                                                 </a>
 
-                                                <!-- 使用表单代替AJAX删除 -->
                                                 <form method="POST" action="{{ url_for('reviews.delete_review', review_id=review.review_id) }}" class="d-inline">
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1"
+                                                    <button type="submit" class="btn action-btn delete-btn"
                                                             onclick="return confirm('Are you sure you want to delete this review?');">
-                                                        <i class="fas fa-trash-alt fa-xs"></i> <small>Delete</small>
+                                                        <i class="fas fa-trash-alt me-1"></i> Delete
                                                     </button>
                                                 </form>
                                             </div>
@@ -238,11 +624,51 @@
                                 </li>
                             {% endfor %}
                             </ul>
+
+                            <!-- Pagination Controls -->
+                            {% if total_pages > 1 %}
+                            <div class="pagination-container">
+                                <nav aria-label="Review pagination">
+                                    <ul class="pagination justify-content-center">
+                                        <!-- Previous Page Button -->
+                                        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                                            <a class="page-link" href="{{ url_for('reviews.product_reviews', product_id=product.id, page=page-1) }}" aria-label="Previous">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+
+                                        <!-- Page Number Buttons -->
+                                        {% for p in range(1, total_pages + 1) %}
+                                            {% if p == page %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ p }}</span>
+                                                </li>
+                                            {% elif p <= 2 or p >= total_pages - 1 or (p >= page - 1 and p <= page + 1) %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ url_for('reviews.product_reviews', product_id=product.id, page=p) }}">{{ p }}</a>
+                                                </li>
+                                            {% elif p == 3 and page > 4 or p == total_pages - 2 and page < total_pages - 3 %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        <!-- Next Page Button -->
+                                        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                                            <a class="page-link" href="{{ url_for('reviews.product_reviews', product_id=product.id, page=page+1) }}" aria-label="Next">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                            {% endif %}
                         {% else %}
-                           <div class="text-center py-5 px-3">
-                                <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
-                                <h5>No reviews yet</h5>
-                                <p class="text-muted">Be the first to review this product!</p>
+                            <div class="empty-state fade-in">
+                                <i class="fas fa-comment-slash"></i>
+                                <h4>No reviews yet</h4>
+                                <p>Be the first to share your thoughts about this product!</p>
                                 {% if current_user.is_authenticated %}
                                     {% set has_reviewed = False %}
                                     {% for r in reviews %}
@@ -250,16 +676,22 @@
                                             {% set has_reviewed = True %}
                                         {% endif %}
                                     {% endfor %}
+
                                     {% if not has_reviewed %}
                                     <a href="{{ url_for('reviews.add_review', product_id=product.id) }}"
-                                       class="btn btn-primary mt-3">
-                                        <i class="fas fa-star"></i> Write the First Review
+                                       class="btn btn-primary">
+                                        <i class="fas fa-star me-1"></i> Write the First Review
                                     </a>
                                     {% else %}
-                                    <button class="btn btn-secondary mt-3" disabled>You've already reviewed</button>
+                                    <button class="btn btn-secondary" disabled>
+                                        <i class="fas fa-check-circle me-1"></i> You've already reviewed
+                                    </button>
                                     {% endif %}
                                 {% else %}
-                                    <p class="text-center text-muted mt-3"><a href="{{ url_for('users.login') }}">Log in</a> to write a review.</p>
+                                    <div class="alert alert-light d-inline-block">
+                                        <i class="fas fa-lock me-1"></i>
+                                        <a href="{{ url_for('users.login') }}">Log in</a> to write a review.
+                                    </div>
                                 {% endif %}
                             </div>
                         {% endif %}

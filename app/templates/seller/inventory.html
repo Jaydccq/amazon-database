@@ -2,133 +2,426 @@
 
 {% block title %}Inventory Management | Gingerbread Marketplace{% endblock %}
 
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #4a6cf7;
+        --primary-light: #e8eeff;
+        --secondary-color: #ff9800;
+        --success-color: #42ba96;
+        --danger-color: #df4759;
+        --warning-color: #ffc107;
+        --text-dark: #2c3e50;
+        --text-light: #6c757d;
+        --border-color: #e7eaf3;
+        --card-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        --hover-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        color: var(--text-dark);
+        font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--hover-shadow);
+    }
+
+    .card-header {
+        background-color: #ffffff;
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.2rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-weight: 500;
+        box-shadow: 0 4px 10px rgba(74, 108, 247, 0.2);
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: #3a5dd9;
+        border-color: #3a5dd9;
+        box-shadow: 0 6px 15px rgba(74, 108, 247, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-secondary {
+        border-color: var(--border-color);
+        color: var(--text-dark);
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-outline-success {
+        color: var(--success-color);
+        border-color: var(--success-color);
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-success:hover {
+        background-color: rgba(66, 186, 150, 0.1);
+        color: var(--success-color);
+        border-color: var(--success-color);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-danger {
+        color: var(--danger-color);
+        border-color: var(--danger-color);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-danger:hover {
+        background-color: rgba(223, 71, 89, 0.1);
+        color: var(--danger-color);
+        border-color: var(--danger-color);
+    }
+
+    .btn-danger {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-danger:hover {
+        background-color: #c93a4a;
+        border-color: #c93a4a;
+    }
+
+    .page-item .page-link {
+        border: none;
+        color: var(--text-dark);
+        padding: 8px 16px;
+        margin: 0 3px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .page-item .page-link:hover {
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+    }
+
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        color: white;
+        box-shadow: 0 2px 10px rgba(74, 108, 247, 0.2);
+    }
+
+    .page-item.disabled .page-link {
+        color: var(--text-light);
+        opacity: 0.6;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid var(--border-color);
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: var(--primary-light);
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+        padding: 1rem;
+        border-color: var(--border-color);
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.4em 0.8em;
+        border-radius: 6px;
+    }
+
+    .bg-danger {
+        background-color: var(--danger-color) !important;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.25);
+    }
+
+    .input-group .btn {
+        border-top-right-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid var(--border-color);
+        padding: 1.2rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid var(--border-color);
+        padding: 1.2rem;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .product-image {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 6px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    tr:hover .product-image {
+        transform: scale(1.1);
+    }
+
+    .inventory-header {
+        position: relative;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+    }
+
+    .inventory-header:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 50px;
+        background-color: var(--primary-color);
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.4rem 0.6rem;
+    }
+
+    .stats-card {
+        border-left: 4px solid var(--primary-color);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .low-stock {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h1>Inventory Management</h1>
-        <p class="text-muted">Manage your product stock and pricing</p>
+<div class="container py-4">
+    <div class="row mb-4 fade-in">
+        <div class="col-md-8">
+            <h1 class="inventory-header">Inventory Management</h1>
+            <p class="text-muted">Manage your product stock and pricing</p>
+        </div>
+        <div class="col-md-4 text-end d-flex justify-content-end align-items-center">
+            <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-1"></i> Add Products
+            </a>
+            <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+            </a>
+        </div>
     </div>
-    <div class="col-md-4 text-end">
-        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Products
-        </a>
-        <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-tachometer-alt"></i> Dashboard
-        </a>
-    </div>
-</div>
 
-<div class="card mb-4">
-    <div class="card-header bg-light">
-        <form method="GET" action="{{ url_for('seller.inventory') }}" class="row g-3">
-            <div class="col-md-5">
-                <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="Search products..." value="{{ search_query or '' }}">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i>
-                    </button>
+    <div class="card mb-4 fade-in" style="animation-delay: 0.1s;">
+        <div class="card-header bg-light">
+            <form method="GET" action="{{ url_for('seller.inventory') }}" class="row g-3">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search products..." value="{{ search_query or '' }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <select name="category_id" class="form-select" onchange="this.form.submit()">
-                    <option value="">All Categories</option>
-                    {% for category_id, category_name in categories.items() %}
-                        <option value="{{ category_id }}" {% if current_category == category_id %}selected{% endif %}>
-                            {{ category_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                {% if search_query or current_category %}
-                    <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-secondary w-100">
-                        Clear Filters
-                    </a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
-    <div class="card-body p-0">
-        {% if inventory_items %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Total Value</th>
-                            <th>Last Updated</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in inventory_items %}
-                        <tr>
-                            <td>
-                                {% if item.image %}
-                                    <img src="{{ item.image }}"  width="40" class="me-2 rounded">
-                                {% else %}
-                                    <div class="bg-light text-center rounded me-2 d-inline-block" style="width: 40px; height: 40px; line-height: 40px;">
-                                        <i class="fas fa-box"></i>
+                <div class="col-md-4">
+                    <select name="category_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        {% for category_id, category_name in categories.items() %}
+                            <option value="{{ category_id }}" {% if current_category == category_id %}selected{% endif %}>
+                                {{ category_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    {% if search_query or current_category %}
+                        <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-1"></i> Clear Filters
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            {% if inventory_items %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total Value</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory_items %}
+                            <tr class="fade-in" style="animation-delay: {{ loop.index * 0.05 }}s;">
+                                <td>
+                                    {% if item.image %}
+                                        <img src="{{ item.image }}" class="product-image me-2">
+                                    {% else %}
+                                        <div class="bg-light text-center rounded me-2 d-inline-block product-image" style="line-height: 40px;">
+                                            <i class="fas fa-box"></i>
+                                        </div>
+                                    {% endif %}
+                                    <span class="fw-medium">{{ item.product_name }}</span>
+                                </td>
+                                <td><span class="badge bg-light text-dark">{{ item.category_name }}</span></td>
+                                <td class="fw-medium">${{ "%.2f"|format(item.unit_price) }}</td>
+                                <td>
+                                    {% if item.quantity < 5 %}
+                                        <span class="text-danger fw-bold low-stock">{{ item.quantity }}</span>
+                                        <span class="badge bg-danger">Low Stock</span>
+                                    {% else %}
+                                        {{ item.quantity }}
+                                    {% endif %}
+                                </td>
+                                <td class="fw-medium">${{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+                                <td><small class="text-muted">{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</small></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.inventory_id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
-                                {% endif %}
-                                {{ item.product_name }}
-                            </td>
-                            <td>{{ item.category_name }}</td>
-                            <td>${{ "%.2f"|format(item.unit_price) }}</td>
-                            <td>
-                                {% if item.quantity < 5 %}
-                                    <span class="text-danger fw-bold">{{ item.quantity }}</span>
-                                    <span class="badge bg-danger">Low Stock</span>
-                                {% else %}
-                                    {{ item.quantity }}
-                                {% endif %}
-                            </td>
-                            <td>${{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
-                            <td>{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('seller.edit_inventory', inventory_id=item.inventory_id) }}" class="btn btn-outline-primary">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item.inventory_id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
 
-                                <!-- Delete Confirmation Modal -->
-                                <div class="modal fade" id="deleteModal{{ item.inventory_id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Confirm Removal</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p>Are you sure you want to remove <strong>{{ item.product_name }}</strong> from your inventory?</p>
-                                                <p class="text-danger">This action cannot be undone.</p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <form method="POST" action="{{ url_for('seller.delete_inventory', inventory_id=item.inventory_id) }}">
-                                                    <button type="submit" class="btn btn-danger">Remove</button>
-                                                </form>
+                                    <!-- Delete Confirmation Modal -->
+                                    <div class="modal fade" id="deleteModal{{ item.inventory_id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                                                        Confirm Removal
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Are you sure you want to remove <strong>{{ item.product_name }}</strong> from your inventory?</p>
+                                                    <div class="alert alert-danger">
+                                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                                        This action cannot be undone.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                                        <i class="fas fa-times me-1"></i> Cancel
+                                                    </button>
+                                                    <form method="POST" action="{{ url_for('seller.delete_inventory', inventory_id=item.inventory_id) }}">
+                                                        <button type="submit" class="btn btn-danger">
+                                                            <i class="fas fa-trash-alt me-1"></i> Remove
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Pagination -->
-            {% if pagination.pages > 1 %}
-                <!-- Correct Pagination -->
+                <!-- Pagination -->
                 {% if pagination.pages > 1 %}
                     <div class="d-flex justify-content-center py-3">
                         <nav aria-label="Page navigation">
@@ -136,12 +429,12 @@
                                 {% if pagination.page > 1 %}
                                     <li class="page-item">
                                         <a class="page-link" href="{{ url_for('seller.inventory', page=(pagination.page-1), search=search_query, category_id=current_category) }}">
-                                            <i class="fas fa-chevron-left"></i> Previous
+                                            <i class="fas fa-chevron-left"></i>
                                         </a>
                                     </li>
                                 {% else %}
                                     <li class="page-item disabled">
-                                        <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+                                        <span class="page-link"><i class="fas fa-chevron-left"></i></span>
                                     </li>
                                 {% endif %}
 
@@ -160,79 +453,86 @@
                                 {% if pagination.page < pagination.pages %}
                                     <li class="page-item">
                                         <a class="page-link" href="{{ url_for('seller.inventory', page=(pagination.page+1), search=search_query, category_id=current_category) }}">
-                                            Next <i class="fas fa-chevron-right"></i>
+                                            <i class="fas fa-chevron-right"></i>
                                         </a>
                                     </li>
                                 {% else %}
                                     <li class="page-item disabled">
-                                        <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+                                        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
                                     </li>
                                 {% endif %}
                             </ul>
                         </nav>
                     </div>
                 {% endif %}
+            {% else %}
+                <div class="text-center py-5 fade-in">
+                    <i class="fas {% if search_query or current_category %}fa-search{% else %}fa-box-open{% endif %} fa-3x text-muted mb-3"></i>
+                    {% if search_query or current_category %}
+                        <h5>No products match your search criteria</h5>
+                        <p class="text-muted">Try using different keywords or categories</p>
+                        <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-primary mt-2">
+                            <i class="fas fa-sync me-1"></i> Clear Filters
+                        </a>
+                    {% else %}
+                        <h5>Your inventory is empty</h5>
+                        <p class="text-muted">Start adding products to your inventory</p>
+                        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus me-1"></i> Add Products
+                        </a>
+                    {% endif %}
+                </div>
             {% endif %}
-        {% else %}
-            <div class="text-center p-5">
-                {% if search_query or current_category %}
-                    <h5>No products match your search criteria</h5>
-                    <p class="text-muted">Try using different keywords or categories</p>
-                    <a href="{{ url_for('seller.inventory') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-sync"></i> Clear Filters
-                    </a>
-                {% else %}
-                    <h5>Your inventory is empty</h5>
-                    <p class="text-muted">Start adding products to your inventory</p>
-                    <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Products
-                    </a>
-                {% endif %}
-            </div>
-        {% endif %}
+        </div>
     </div>
-</div>
 
-<!-- Inventory Statistics -->
-<div class="row">
-    <div class="col-md-4">
-        <div class="card bg-light mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Inventory Summary</h5>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Total Products:</span>
-                    <span class="fw-bold">{{ inventory_items|length }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Total Value:</span>
-                    <span class="fw-bold">${{ "%.2f"|format(inventory_items|sum(attribute='quantity')|float * inventory_items|sum(attribute='unit_price')|float) }}</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span>Low Stock Items:</span>
-                    <span class="fw-bold text-danger">{{ inventory_items|selectattr('quantity', 'lt', 5)|list|length }}</span>
+    <!-- Inventory Statistics -->
+    <div class="row fade-in" style="animation-delay: 0.2s;">
+        <div class="col-md-4">
+            <div class="card bg-light mb-4 stats-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar me-2" style="color: var(--primary-color);"></i>
+                        Inventory Summary
+                    </h5>
+                    <div class="d-flex justify-content-between mb-3 mt-4">
+                        <span>Total Products:</span>
+                        <span class="fw-bold">{{ inventory_items|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Total Value:</span>
+                        <span class="fw-bold">${{ "%.2f"|format(inventory_items|sum(attribute='quantity')|float * inventory_items|sum(attribute='unit_price')|float) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Low Stock Items:</span>
+                        <span class="fw-bold text-danger">{{ inventory_items|selectattr('quantity', 'lt', 5)|list|length }}</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-8">
-        <div class="card bg-light mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Quick Actions</h5>
-                <div class="row">
-                    <div class="col-md-4 mb-2">
-                        <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-outline-primary w-100">
-                            <i class="fas fa-plus"></i> Add Products
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <a href="{{ url_for('seller.orders') }}" class="btn btn-outline-success w-100">
-                            <i class="fas fa-shipping-fast"></i> View Orders
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-2">
-                        <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-secondary w-100">
-                            <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
+        <div class="col-md-8">
+            <div class="card bg-light mb-4 stats-card" style="border-left-color: var(--success-color);">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt me-2" style="color: var(--success-color);"></i>
+                        Quick Actions
+                    </h5>
+                    <div class="row mt-4">
+                        <div class="col-md-4 mb-2">
+                            <a href="{{ url_for('seller.add_inventory') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-plus me-1"></i> Add Products
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="{{ url_for('seller.orders') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-shipping-fast me-1"></i> View Orders
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-secondary w-100">
+                                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
