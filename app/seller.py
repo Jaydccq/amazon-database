@@ -193,8 +193,11 @@ def add_inventory():
             continue
 
         # Skip if search is active and doesn't match
-        if search_query and search_query.lower() not in p.product_name.lower():
-            continue
+        if search_query:
+            # First check if product_name attribute exists
+            product_name = getattr(p, 'product_name', getattr(p, 'name', ''))
+            if search_query.lower() not in product_name.lower():
+                continue
 
         filtered_products.append(p)
 

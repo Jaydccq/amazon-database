@@ -1,7 +1,8 @@
 from flask_login import UserMixin
 from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from flask import render_template, redirect, url_for, flash, request, session
+from flask_login import login_user, logout_user, current_user, login_required
 class User(UserMixin):
     def __init__(self, user_id, email, first_name, last_name, address, current_balance, is_seller):
         self.id = user_id
@@ -132,13 +133,26 @@ class User(UserMixin):
     def update_profile(user_id, email, first_name, last_name, address):
         """
         Updates the profile information for a given user_id.
+        Checks if the email already exists and belongs to a different user.
         """
         try:
+            # First, check if the email exists for a different user
+            rows = app.db.execute("""
+                SELECT user_id FROM Accounts WHERE email = :email AND user_id != :user_id
+            """, email=email, user_id=user_id)
+
+            # If the email exists for another user, return False
+            if rows:
+                app.logger.warning(f"Update profile failed for user {user_id}: Email '{email}' already exists.")
+                return False
+
+            # Otherwise, proceed with update
             app.db.execute("""
                 UPDATE Accounts
                 SET email = :email, first_name = :first_name, last_name = :last_name, address = :address
                 WHERE user_id = :user_id
             """, email=email, first_name=first_name, last_name=last_name, address=address, user_id=user_id)
+
             app.logger.info(f"Profile updated successfully for user {user_id}.")
             return True
         except Exception as e:
