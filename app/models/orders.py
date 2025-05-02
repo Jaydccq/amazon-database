@@ -389,3 +389,17 @@ class Order:
         ''', buyer_id=buyer_id)
 
         return [{'id': row[0], 'name': row[1]} for row in rows]
+
+    @staticmethod
+    def has_user_purchased_from_seller(user_id, seller_id):
+        """Check if a user has ever purchased from a specific seller"""
+        rows = app.db.execute('''
+            SELECT COUNT(*) 
+            FROM Orders o
+            JOIN Orders_Products op ON o.order_id = op.order_id
+            WHERE o.buyer_id = :user_id 
+            AND op.seller_id = :seller_id
+            AND op.status = 'Fulfilled'
+        ''', user_id=user_id, seller_id=seller_id)
+
+        return rows[0][0] > 0 if rows else False

@@ -110,11 +110,6 @@
                                                 <span class="fw-medium">Added:</span>
                                                 <span>{{ product.created_at.strftime('%b %d, %Y') if product.created_at else 'N/A' }}</span>
                                             </li>
-                                            <li class="mb-2">
-                                                <i class="fas fa-shopping-cart text-secondary me-2"></i>
-                                                <span class="fw-medium">Sellers:</span>
-                                                <span>{{ product.inventory|length if product.inventory else 0 }}</span>
-                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -129,12 +124,7 @@
                                 {% for item in product.inventory %}
                                 <div class="list-group-item seller-option {% if loop.first %} border-start border-3 border-primary{% endif %}"
                                      data-seller-id="{{ item.seller_id }}"
-                                     data-seller-name="{{ item.seller_name }}"
-                                     data-seller-rating="4.8"
-                                     data-seller-reviews="56"
-                                     data-seller-satisfaction="98"
-                                     data-seller-response="24h"
-                                     data-seller-products="256">
+                                     data-seller-name="{{ item.seller_name }}">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <div class="d-flex align-items-center mb-1">
@@ -142,14 +132,19 @@
                                                 {% if loop.first %}
                                                 <span class="badge bg-primary seller-badge">Best Price</span>
                                                 {% endif %}
+                                                <!-- Add seller rating display -->
+                                                {% if seller_ratings and item.seller_id in seller_ratings %}
+                                                <span class="badge bg-warning text-dark ms-2">
+                                                    {{ "%.1f"|format(seller_ratings[item.seller_id]) }}
+                                                    <i class="fas fa-star"></i>
+                                                </span>
+                                                {% endif %}
                                             </div>
                                             <div class="d-flex align-items-center">
                                                 <span class="me-3 text-success">
                                                     <i class="fas fa-check-circle me-1"></i>
                                                     In Stock: {{ item.quantity }} units
                                                 </span>
-
-
                                             </div>
                                         </div>
                                         <div>
@@ -428,151 +423,96 @@
 
         <!-- Sidebar Column -->
         <div class="col-md-4">
-{#            <!-- Seller Information Card - Dynamic based on selection -->#}
-{#            <div class="card shadow-sm mb-4" id="seller-info-card">#}
-{#                <div class="card-header bg-white py-3 border-bottom">#}
-{#                    <h5 class="mb-0 fw-bold">Seller Information</h5>#}
-{#                </div>#}
-{#                <div class="card-body">#}
-{#                    <div class="d-flex align-items-center mb-3">#}
-{#                        <div class="flex-shrink-0">#}
-{#                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">#}
-{#                                <i class="fas fa-user-tie fa-2x text-secondary"></i>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                        <div class="ms-3">#}
-{#                            <h5 class="fw-bold mb-1" id="seller-name">Stephanie Thompson</h5>#}
-{#                            <div class="d-flex align-items-center">#}
-{#                                <div class="me-2">#}
-{#                                    <i class="fas fa-star text-warning"></i>#}
-{#                                    <span id="seller-rating">4.9</span>#}
-{#                                </div>#}
-{#                                <span class="text-muted">(<span id="seller-reviews">124</span> ratings)</span>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
-{##}
-{#                    <!-- Seller Stats -->#}
-{#                    <div class="row text-center mb-3">#}
-{#                        <div class="col-4">#}
-{#                            <div class="p-2 border rounded">#}
-{#                                <h6 class="fw-bold text-primary mb-0"><span id="seller-satisfaction">98</span>%</h6>#}
-{#                                <small class="text-muted">Satisfaction</small>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                        <div class="col-4">#}
-{#                            <div class="p-2 border rounded">#}
-{#                                <h6 class="fw-bold text-primary mb-0" id="seller-response">24h</h6>#}
-{#                                <small class="text-muted">Response</small>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                        <div class="col-4">#}
-{#                            <div class="p-2 border rounded">#}
-{#                                <h6 class="fw-bold text-primary mb-0" id="seller-products">256</h6>#}
-{#                                <small class="text-muted">Products</small>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
-{##}
-{#                    <a href="{{ url_for('seller.inventory', seller_id=product.inventory[0].seller_id if product.inventory else 0) }}" class="btn btn-outline-primary w-100" id="seller-store-link">#}
-{#                        <i class="fas fa-store me-2"></i> View Seller's Store#}
-{#                    </a>#}
-{#                </div>#}
-{#            </div>#}
-
-{#            <!-- Related Products Card -->#}
-{#            <div class="card shadow-sm mb-4">#}
-{#                <div class="card-header bg-white py-3 border-bottom">#}
-{#                    <h5 class="mb-0 fw-bold">You May Also Like</h5>#}
-{#                </div>#}
-{#                <div class="card-body">#}
-{#                    <div class="list-group list-group-flush">#}
-{#                        {% if related_products %}#}
-{#                            {% for product in related_products %}#}
-{#                                <a href="{{ url_for('product.product_detail', product_id=product.id) }}" class="list-group-item list-group-item-action px-0 py-3 {% if not loop.last %}border-bottom{% endif %}">#}
-{#                                    <div class="d-flex">#}
-{#                                        <div class="flex-shrink-0" style="width: 60px; height: 60px;">#}
-{#                                            {% if product.image %}#}
-{#                                                <img src="{{ product.image }}" alt="{{ product.name }}" class="img-fluid rounded h-100 w-100 object-fit-cover">#}
-{#                                            {% else %}#}
-{#                                                <div class="bg-light rounded w-100 h-100 d-flex align-items-center justify-content-center">#}
-{#                                                    <i class="fas fa-image text-muted"></i>#}
-{#                                                </div>#}
-{#                                            {% endif %}#}
-{#                                        </div>#}
-{#                                        <div class="ms-3">#}
-{#                                            <h6 class="mb-1 text-truncate">{{ product.name }}</h6>#}
-{#                                            <div class="d-flex align-items-center mb-1">#}
-{#                                                <div class="me-2">#}
-{#                                                    {% set rating = product.rating_avg|default(0)|float %}#}
-{#                                                    {% for i in range(5) %}#}
-{#                                                        {% if i < rating|int %}#}
-{#                                                            <i class="fas fa-star text-warning small"></i>#}
-{#                                                        {% elif i == rating|int and rating % 1 >= 0.5 %}#}
-{#                                                            <i class="fas fa-star-half-alt text-warning small"></i>#}
-{#                                                        {% else %}#}
-{#                                                            <i class="far fa-star text-warning small"></i>#}
-{#                                                        {% endif %}#}
-{#                                                    {% endfor %}#}
-{#                                                </div>#}
-{#                                                <small class="text-muted">{{ "%.1f"|format(rating) }} ({{ product.review_count|default(0) }})</small>#}
-{#                                            </div>#}
-{#                                            <span class="text-primary fw-medium">${{ "%.2f"|format(product.price|default(0)) }}</span>#}
-{#                                        </div>#}
-{#                                    </div>#}
-{#                                </a>#}
-{#                            {% endfor %}#}
-{#                        {% else %}#}
-{#                            <div class="text-center py-4">#}
-{#                                <i class="fas fa-box-open fa-2x text-muted mb-2"></i>#}
-{#                                <p class="text-muted mb-0">No related products found</p>#}
-{#                            </div>#}
-{#                        {% endif %}#}
-{#                    </div>#}
-{#            #}
-{#                    <a href="{{ url_for('product.category', category_id=product.category_id) }}" class="btn btn-outline-primary w-100 mt-3">#}
-{#                        <i class="fas fa-search me-1"></i> View More in {{ product.category_name }}#}
-{#                    </a>#}
-{#                </div>#}
-{#            </div>#}
-{##}
-{#            <!-- Recently Viewed -->#}
-{#            <div class="card shadow-sm">#}
-{#                <div class="card-header bg-white py-3 border-bottom">#}
-{#                    <h5 class="mb-0 fw-bold">Recently Viewed</h5>#}
-{#                </div>#}
-{#                <div class="card-body">#}
-{#                    <div class="row row-cols-2 g-2">#}
-{#                        <!-- Recently Viewed 1 -->#}
-{#                        <div class="col">#}
-{#                            <a href="{{ url_for('product.product_detail', product_id=4) }}" class="text-decoration-none">#}
-{#                                <div class="card h-100 border">#}
-{#                                    <div class="bg-light d-flex align-items-center justify-content-center p-2" style="height: 80px;">#}
-{#                                        <i class="fas fa-image text-muted"></i>#}
-{#                                    </div>#}
-{#                                    <div class="card-body p-2">#}
-{#                                        <p class="mb-0 text-truncate small">Product Name</p>#}
-{#                                        <span class="text-primary small">$15.99</span>#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </a>#}
-{#                        </div>#}
-{##}
-{#                        <!-- Recently Viewed 2 -->#}
-{#                        <div class="col">#}
-{#                            <a href="{{ url_for('product.product_detail', product_id=5) }}" class="text-decoration-none">#}
-{#                                <div class="card h-100 border">#}
-{#                                    <div class="bg-light d-flex align-items-center justify-content-center p-2" style="height: 80px;">#}
-{#                                        <i class="fas fa-image text-muted"></i>#}
-{#                                    </div>#}
-{#                                    <div class="card-body p-2">#}
-{#                                        <p class="mb-0 text-truncate small">Product Name</p>#}
-{#                                        <span class="text-primary small">$22.50</span>#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </a>#}
-{#                        </div>#}
+            <!-- Seller Information Card -->
+            <div class="card shadow-sm mb-4" id="seller-info-card">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold">Seller Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if product.inventory %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-user-tie fa-2x text-secondary"></i>
+                            </div>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="fw-bold mb-1" id="seller-name">{{ product.inventory[0].seller_name }}</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    <i class="fas fa-star text-warning"></i>
+                                    <span id="seller-rating">{{ seller_avg_rating|default('N/A') }}</span>
+                                </div>
+                                <span class="text-muted">(<span id="seller-review-count">{{ seller_review_count|default('0') }}</span> ratings)</span>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Seller Rating Bar Chart -->
+                    {% if seller_rating_distribution %}
+                    <div class="mb-3">
+                        {% for star in [5, 4, 3, 2, 1] %}
+                            {% set count = seller_rating_distribution.get(star, 0) %}
+                            {% set percent = (count / seller_review_count * 100) if seller_review_count > 0 else 0 %}
+                            <div class="d-flex align-items-center mb-1">
+                                <div style="width: 20px;">{{ star }}</div>
+                                <div class="progress flex-grow-1 mx-2" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percent }}%"></div>
+                                </div>
+                                <div style="width: 20px; text-align: right;">{{ count }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between mb-3">
+                        {% if current_user.is_authenticated and product.inventory %}
+                            {% set seller_id = product.inventory[0].seller_id %}
+                            {% set has_purchased = Order.has_user_purchased_from_seller(current_user.id, seller_id) %}
+                            {% set has_reviewed = false %}
+
+                            {% if seller_reviews %}
+                                {% for review in seller_reviews %}
+                                    {% if review.user_id == current_user.id and review.seller_id == seller_id %}
+                                        {% set has_reviewed = true %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+
+                            {% if has_purchased and not has_reviewed %}
+                                <a href="{{ url_for('reviews.add_review', seller_id=seller_id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-star me-1"></i> Review Seller
+                                </a>
+                            {% endif %}
+                        {% endif %}
+
+                        <a href="{{ url_for('reviews.seller_reviews', seller_id=product.inventory[0].seller_id if product.inventory else 0) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-comments me-1"></i> View All Reviews
+                        </a>
+                    </div>
+
+                    <!-- Most Helpful Seller Review -->
+                    {% if top_seller_review %}
+                    <div class="card bg-light border-0 p-2 mb-2">
+                        <div class="d-flex mb-1">
+                            <div class="me-2">
+                                {% for i in range(1, 6) %}
+                                    <i class="{% if i <= top_seller_review.rating %}fas{% else %}far{% endif %} fa-star text-warning small"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">{{ top_seller_review.review_date.strftime('%b %d, %Y') }}</small>
+                        </div>
+                        <p class="small mb-0 text-muted">{{ top_seller_review.comment|truncate(100) }}</p>
+                    </div>
+                    {% endif %}
+
+
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No seller information available for this product</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -584,13 +524,21 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Get all seller option elements
         const sellerOptions = document.querySelectorAll('.seller-option');
+
+        // Dynamic seller ratings object (from backend)
+        const sellerRatings = {
+            {% if seller_ratings %}
+                {% for seller_id, rating in seller_ratings.items() %}
+                    "{{ seller_id }}": {{ rating }},
+                {% endfor %}
+            {% endif %}
+        };
+
+        // Get seller info elements
+        const sellerInfoCard = document.getElementById('seller-info-card');
         const sellerNameElement = document.getElementById('seller-name');
         const sellerRatingElement = document.getElementById('seller-rating');
-        const sellerReviewsElement = document.getElementById('seller-reviews');
-        const sellerSatisfactionElement = document.getElementById('seller-satisfaction');
-        const sellerResponseElement = document.getElementById('seller-response');
-        const sellerProductsElement = document.getElementById('seller-products');
-        const sellerStoreLink = document.getElementById('seller-store-link');
+        const sellerReviewCountElement = document.getElementById('seller-review-count');
 
         // Set default selected seller (first one)
         let selectedSellerId = sellerOptions.length > 0 ? sellerOptions[0].dataset.sellerId : null;
@@ -602,61 +550,93 @@
                 if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
                     e.preventDefault();
 
-                    // Remove highlight from all options
+                    // Update selected seller ID
+                    selectedSellerId = this.dataset.sellerId;
+
+                    // Update seller info card
+                    if (sellerNameElement) {
+                        sellerNameElement.textContent = this.dataset.sellerName;
+                    }
+
+                    if (sellerRatingElement && sellerRatings[selectedSellerId]) {
+                        sellerRatingElement.textContent = sellerRatings[selectedSellerId].toFixed(1);
+                    }
+
+                    // Reload seller reviews section via AJAX
+                    loadSellerReviews(selectedSellerId);
+
+                    // Update UI to show selected seller
                     sellerOptions.forEach(opt => {
                         opt.classList.remove('border-start', 'border-3', 'border-primary');
-                        opt.querySelector('.seller-badge')?.classList.add('d-none');
                     });
-
-                    // Add highlight to selected option
                     this.classList.add('border-start', 'border-3', 'border-primary');
-                    const badge = this.querySelector('.seller-badge');
-                    if (badge) badge.classList.remove('d-none');
+                }
+            });
+        });
 
-                    // Update seller info
-                    selectedSellerId = this.dataset.sellerId;
-                    sellerNameElement.textContent = this.dataset.sellerName;
-                    sellerRatingElement.textContent = this.dataset.sellerRating;
-                    sellerReviewsElement.textContent = this.dataset.sellerReviews;
-                    sellerSatisfactionElement.textContent = this.dataset.sellerSatisfaction;
-                    sellerResponseElement.textContent = this.dataset.sellerResponse;
-                    sellerProductsElement.textContent = this.dataset.sellerProducts;
-
-                    // Update store link
-                    sellerStoreLink.href = `/seller/inventory?seller_id=${selectedSellerId}`;
-
-                    // Find the button in this seller option and style it as primary
-                    const buttons = document.querySelectorAll('.select-seller-btn');
-                    buttons.forEach(btn => {
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-outline-primary');
-                    });
-
-                    const thisButton = this.querySelector('.select-seller-btn');
-                    if (thisButton) {
-                        thisButton.classList.remove('btn-outline-primary');
-                        thisButton.classList.add('btn-primary');
+        // Function to load seller reviews via AJAX
+        function loadSellerReviews(sellerId) {
+            fetch(`/api/seller/${sellerId}/reviews`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update seller review count
+                    if (sellerReviewCountElement) {
+                        sellerReviewCountElement.textContent = data.count || '0';
                     }
-                }
-            });
-        });
 
-        // Make "Add to Cart" buttons also select the seller
-        const addToCartButtons = document.querySelectorAll('.select-seller-btn');
-        addToCartButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const sellerOption = this.closest('.seller-option');
-                if (sellerOption) {
-                    // Manually trigger the click event on the parent
-                    const event = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    sellerOption.dispatchEvent(event);
-                }
-            });
-        });
+                    // Update top review if available
+                    if (data.top_review) {
+                        const topReviewElement = document.createElement('div');
+                        topReviewElement.className = 'card bg-light border-0 p-2 mb-2';
+
+                        // Create rating stars
+                        let starsHtml = '';
+                        for (let i = 1; i <= 5; i++) {
+                            starsHtml += `<i class="${i <= data.top_review.rating ? 'fas' : 'far'} fa-star text-warning small"></i>`;
+                        }
+
+                        topReviewElement.innerHTML = `
+                            <div class="d-flex mb-1">
+                                <div class="me-2">
+                                    ${starsHtml}
+                                </div>
+                                <small class="text-muted">${new Date(data.top_review.review_date).toLocaleDateString()}</small>
+                            </div>
+                            <p class="small mb-0 text-muted">${data.top_review.comment.substring(0, 100)}${data.top_review.comment.length > 100 ? '...' : ''}</p>
+                        `;
+
+                        // Replace existing top review if any
+                        const existingTopReview = sellerInfoCard.querySelector('.card.bg-light');
+                        if (existingTopReview) {
+                            existingTopReview.replaceWith(topReviewElement);
+                        } else {
+                            // Add before the View Seller's Store button
+                            const viewStoreBtn = sellerInfoCard.querySelector('.btn-outline-primary.w-100');
+                            if (viewStoreBtn) {
+                                viewStoreBtn.parentNode.insertBefore(topReviewElement, viewStoreBtn);
+                            }
+                        }
+                    }
+
+                    // Update seller review button link
+                    const reviewSellerBtn = sellerInfoCard.querySelector('.btn-outline-primary[href*="reviews.add_review"]');
+                    if (reviewSellerBtn) {
+                        reviewSellerBtn.href = `/reviews/add?seller_id=${sellerId}`;
+                    }
+
+                    // Update view all reviews link
+                    const viewAllReviewsBtn = sellerInfoCard.querySelector('.btn-outline-secondary');
+                    if (viewAllReviewsBtn) {
+                        viewAllReviewsBtn.href = `/reviews/seller/${sellerId}`;
+                    }
+                })
+                .catch(error => console.error('Error loading seller reviews:', error));
+        }
+
+        // Load initial seller reviews if a seller is selected
+        if (selectedSellerId) {
+            loadSellerReviews(selectedSellerId);
+        }
     });
 </script>
 {% endblock %}

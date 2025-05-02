@@ -314,3 +314,61 @@ class Review:
             app.logger.error(f"Error updating vote counts: {e}", exc_info=True)
             # Re-raise the exception to be caught by the route handler
             raise
+
+    @staticmethod
+    def has_user_purchased_from_seller(user_id, seller_id):
+        """Check if a user has purchased from a specific seller"""
+        rows = app.db.execute('''
+            SELECT COUNT(*) 
+            FROM Orders o
+            JOIN Orders_Products op ON o.order_id = op.order_id
+            WHERE o.buyer_id = :user_id 
+            AND op.seller_id = :seller_id
+            AND op.status = 'Fulfilled'
+        ''', user_id=user_id, seller_id=seller_id)
+
+        return rows[0][0] > 0 if rows else False
+
+    @staticmethod
+    def get_user_reviews_for_sellers(user_id, seller_ids):
+        """Get all reviews a user has written for specified sellers"""
+        if not seller_ids:
+            return []
+
+        placeholders = ', '.join([f':{i}' for i in range(len(seller_ids))])
+        params = {str(i): seller_id for i, seller_id in enumerate(seller_ids)}
+        params['user_id'] = user_id
+
+        query = f'''
+        SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating,
+               upvotes, downvotes
+        FROM Reviews_Feedbacks
+        WHERE user_id = :user_id
+        AND seller_id IN ({placeholders})
+        AND product_id IS NULL
+        '''
+
+        rows = app.db.execute(query, **params)
+        return [Review(*row, None) for row in rows]
+
+    @staticmethod
+    def get_user_reviews_for_products(user_id, product_ids):
+        """Get all reviews a user has written for specified products"""
+        if not product_ids:
+            return []
+
+        placeholders = ', '.join([f':{i}' for i in range(len(product_ids))])
+        params = {str(i): product_id for i, product_id in enumerate(product_ids)}
+        params['user_id'] = user_id
+
+        query = f'''
+        SELECT review_id, user_id, comment, review_date, product_id, seller_id, rating,
+               upvotes, downvotes
+        FROM Reviews_Feedbacks
+        WHERE user_id = :user_id
+        AND product_id IN ({placeholders})
+        AND seller_id IS NULL
+        '''
+
+        rows = app.db.execute(query, **params)
+        return [Review(*row, None) for row in rows]

@@ -6,6 +6,8 @@ from app.models.review import Review
 from app.models.inventory import Inventory
 from flask import Blueprint, render_template, jsonify, request, abort, current_app
 bp = Blueprint("product", __name__, url_prefix="/products")
+from app.models.orders import Order
+#
 
 @bp.route("/<int:product_id>")
 def product_detail(product_id):
@@ -14,19 +16,52 @@ def product_detail(product_id):
         abort(404, description="Product not found")
 
     inventory_items = Inventory.get_sellers_for_product(product_id)
-    print(f"DEBUG: Original product.image from DB: {product.image}")
     product.inventory = inventory_items
-    product.image = f"/static/uploads/{product.image}"
-    print(f"DEBUG: Original product.image from DB: {product.image}")
-    print(product.image)
 
-    reviews = Review.get_product_review(product_id)
+    # Product reviews
     reviews = Review.get_product_review(product_id)
 
+    # Get seller reviews if there are sellers
+    seller_reviews = []
+    seller_avg_rating = None
+    seller_review_count = 0
+    seller_rating_distribution = None
+    top_seller_review = None
+
+    if product.inventory and len(product.inventory) > 0:
+        # Default to the first seller
+        seller_id = product.inventory[0].seller_id
+
+        # Get seller reviews summary
+        seller_reviews = Review.get_seller_review(seller_id)
+        seller_avg_rating, seller_review_count = Review.get_avg_rating_seller(seller_id)
+
+        # Calculate rating distribution
+        seller_rating_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        for review in seller_reviews:
+            if review.rating in seller_rating_distribution:
+                seller_rating_distribution[review.rating] += 1
+
+        # Get top seller review (highest helpfulness score)
+        if seller_reviews:
+            top_seller_review = max(seller_reviews, key=lambda r: r.helpfulness)
+
+    # Check if user has purchased from the seller (needed for Review Seller button)
+    has_purchased_from_seller = False
+    if current_user.is_authenticated and product.inventory:
+        seller_id = product.inventory[0].seller_id
+        has_purchased_from_seller = Order.has_user_purchased_from_seller(current_user.id, seller_id)
 
     return render_template("product_detail.html",
                            product=product,
-                           reviews=reviews)
+                           reviews=reviews,
+                           seller_reviews=seller_reviews,
+                           seller_avg_rating=seller_avg_rating,
+                           seller_review_count=seller_review_count,
+                           seller_rating_distribution=seller_rating_distribution,
+                           top_seller_review=top_seller_review,
+                           has_purchased_from_seller=has_purchased_from_seller,
+                           Order=Order)  # Pass Order class for template methods
 
 
 @bp.route("/api/<int:product_id>")

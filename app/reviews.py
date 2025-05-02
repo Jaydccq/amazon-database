@@ -5,6 +5,7 @@ from sqlalchemy import text
 # Import necessary models
 from .models.review import Review
 from .models.user import User
+from .models.orders import Order
 from .models.product import Product
 # Import the app instance
 bp = Blueprint('reviews', __name__)
@@ -73,50 +74,50 @@ def user_reviews(user_id): # Display public reviews page
                            user=user)
 
 
-@bp.route('/reviews/add', methods=['GET', 'POST'])
-@login_required
-def add_review(): # Handle adding new review
-    if request.method == 'POST': # Process form submission
-        comment = request.form.get('comment')
-        rating = int(request.form.get('rating'))
-        review_type = request.form.get('review_type') # product or seller
-
-        product_id = None
-        seller_id = None
-        if review_type == 'product':
-            product_id = int(request.form.get('product_id'))
-        else:
-            seller_id = int(request.form.get('seller_id'))
-
-        try:
-            Review.create(current_user.id, comment, product_id, seller_id, rating)
-            flash('Review added successfully!')
-        except ValueError as e:
-            flash(f'Error: {str(e)}') # Show specific errors
-
-        if product_id:
-            return redirect(url_for('product.product_detail', product_id=product_id))
-        elif seller_id:
-            # Redirect to seller page if exists, otherwise profile?
-            return redirect(url_for('reviews.seller_reviews', seller_id=seller_id)) # Adjusted redirect
-        else:
-             return redirect(url_for('reviews.user_reviews_page')) # Fallback redirect
-
-    product_id = request.args.get('product_id', type=int)
-    seller_id = request.args.get('seller_id', type=int)
-
-    product = None
-    seller = None
-
-    if product_id:
-        product = Product.get(product_id) # Get product details
-    elif seller_id:
-        seller = User.get(seller_id) # Get seller details
-
-    # Render add review form
-    return render_template('add_review.html',
-                           product=product,
-                           seller=seller)
+# @bp.route('/reviews/add', methods=['GET', 'POST'])
+# @login_required
+# def add_review(): # Handle adding new review
+#     if request.method == 'POST': # Process form submission
+#         comment = request.form.get('comment')
+#         rating = int(request.form.get('rating'))
+#         review_type = request.form.get('review_type') # product or seller
+#
+#         product_id = None
+#         seller_id = None
+#         if review_type == 'product':
+#             product_id = int(request.form.get('product_id'))
+#         else:
+#             seller_id = int(request.form.get('seller_id'))
+#
+#         try:
+#             Review.create(current_user.id, comment, product_id, seller_id, rating)
+#             flash('Review added successfully!')
+#         except ValueError as e:
+#             flash(f'Error: {str(e)}') # Show specific errors
+#
+#         if product_id:
+#             return redirect(url_for('product.product_detail', product_id=product_id))
+#         elif seller_id:
+#             # Redirect to seller page if exists, otherwise profile?
+#             return redirect(url_for('reviews.seller_reviews', seller_id=seller_id)) # Adjusted redirect
+#         else:
+#              return redirect(url_for('reviews.user_reviews_page')) # Fallback redirect
+#
+#     product_id = request.args.get('product_id', type=int)
+#     seller_id = request.args.get('seller_id', type=int)
+#
+#     product = None
+#     seller = None
+#
+#     if product_id:
+#         product = Product.get(product_id) # Get product details
+#     elif seller_id:
+#         seller = User.get(seller_id) # Get seller details
+#
+#     # Render add review form
+#     return render_template('add_review.html',
+#                            product=product,
+#                            seller=seller)
 
 
 @bp.route('/reviews/edit/<int:review_id>', methods=['GET', 'POST'])
@@ -216,13 +217,13 @@ def seller_reviews(seller_id): # Display seller reviews page
         if 1 <= r.rating <= 5:
             rating_distribution[r.rating] += 1
 
-    # Render seller reviews template
     return render_template('seller_reviews.html',
                            seller=seller,
                            reviews=reviews, # Pass sorted reviews
                            avg_rating=avg_rating,
                            review_count=review_count,
-                           rating_distribution=rating_distribution)
+                           rating_distribution=rating_distribution,
+                           Order=Order)
 
 
 @bp.route('/reviews/vote/<int:review_id>', methods=['POST'])
@@ -292,3 +293,90 @@ def delete_review(review_id):
         return redirect(url_for('reviews.seller_reviews', seller_id=review.seller_id))
     else:
         return redirect(url_for('reviews.user_reviews_page'))
+
+
+@bp.route('/reviews/add', methods=['GET', 'POST'])
+@login_required
+def add_review():
+    if request.method == 'POST':
+        comment = request.form.get('comment')
+        rating = int(request.form.get('rating'))
+        review_type = request.form.get('review_type')  # product or seller
+
+        product_id = None
+        seller_id = None
+        if review_type == 'product':
+            product_id = int(request.form.get('product_id'))
+        else:
+            seller_id = int(request.form.get('seller_id'))
+
+            # Check if user has purchased from this seller
+            has_purchased = Order.has_user_purchased_from_seller(current_user.id, seller_id)
+            if not has_purchased:
+                flash('You can only review sellers you have purchased from.', 'error')
+                return redirect(url_for('reviews.seller_reviews', seller_id=seller_id))
+
+        try:
+            Review.create(current_user.id, comment, product_id, seller_id, rating)
+            flash('Review added successfully!')
+        except ValueError as e:
+            flash(f'Error: {str(e)}')
+
+        if product_id:
+            return redirect(url_for('product.product_detail', product_id=product_id))
+        elif seller_id:
+            return redirect(url_for('reviews.seller_reviews', seller_id=seller_id))
+        else:
+            return redirect(url_for('reviews.user_reviews_page'))
+
+    product_id = request.args.get('product_id', type=int)
+    seller_id = request.args.get('seller_id', type=int)
+
+    product = None
+    seller = None
+
+    if product_id:
+        product = Product.get(product_id)
+    elif seller_id:
+        seller = User.get(seller_id)
+
+        # Check if user has purchased from this seller
+        has_purchased = Order.has_user_purchased_from_seller(current_user.id, seller_id)
+        if not has_purchased:
+            flash('You can only review sellers you have purchased from.', 'error')
+            return redirect(url_for('reviews.seller_reviews', seller_id=seller_id))
+
+    return render_template('add_review.html',
+                           product=product,
+                           seller=seller)
+
+
+@bp.route('/api/seller/<int:seller_id>/reviews')
+def api_seller_reviews(seller_id):
+    """API endpoint to get seller reviews data for AJAX"""
+    # Get seller reviews
+    reviews = Review.get_seller_review(seller_id)
+
+    # Get average rating and review count
+    avg_rating, review_count = Review.get_avg_rating_seller(seller_id)
+
+    # Get top review (highest helpfulness score)
+    top_review = None
+    if reviews:
+        top_review = max(reviews, key=lambda r: r.helpfulness)
+        top_review = {
+            'review_id': top_review.review_id,
+            'user_id': top_review.user_id,
+            'comment': top_review.comment,
+            'review_date': top_review.review_date.strftime('%Y-%m-%d'),
+            'rating': top_review.rating,
+            'helpfulness': top_review.helpfulness
+        }
+
+    # Return JSON response
+    return jsonify({
+        'seller_id': seller_id,
+        'avg_rating': float(avg_rating) if avg_rating else None,
+        'count': review_count,
+        'top_review': top_review
+    })

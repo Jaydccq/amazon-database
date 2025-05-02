@@ -5,7 +5,7 @@ from .models.orders import OrderItem
 from datetime import datetime
 from .models.orders import Order
 from .models.product import Product
-
+from .models.review import Review
 from flask import Blueprint
 
 bp = Blueprint('index', __name__)
@@ -267,6 +267,49 @@ def get_products_for_buyer(buyer_id):
     return [{'id': row[0], 'name': row[1]} for row in rows]
 
 
+# @bp.route('/order/<int:order_id>')
+# @login_required
+# def view_order_details(order_id):
+#     # Get the order
+#     order = Order.get(order_id)
+#
+#     # Check if order exists and belongs to the current user
+#     if not order or order.buyer_id != current_user.id:
+#         flash('Order not found or you do not have permission to view it', 'error')
+#         return redirect(url_for('index.purchase_history'))
+#
+#     # Group items by seller
+#     sellers = {}
+#     for item in order.items:
+#         if item.seller_id not in sellers:
+#             sellers[item.seller_id] = {
+#                 'id': item.seller_id,
+#                 'name': item.seller_name,
+#                 'products': [],  # Changed from 'items' to 'products'
+#                 'subtotal': 0,
+#                 'status': 'Fulfilled'  # Will be set to 'Unfulfilled' if any item is unfulfilled
+#             }
+#
+#         # Add item to seller group
+#         item.image = f"/static/uploads/{item.image}"
+#         sellers[item.seller_id]['products'].append(item)  # Changed from 'items' to 'products'
+#
+#         # Add to seller subtotal
+#         sellers[item.seller_id]['subtotal'] += item.get_subtotal()
+#
+#         # Update seller group status
+#         if item.status == 'Unfulfilled':
+#             sellers[item.seller_id]['status'] = 'Unfulfilled'
+#
+#     # Convert to list for template
+#     seller_groups = list(sellers.values())
+#
+#     return render_template(
+#         'order_details.html',
+#         order=order,
+#         seller_groups=seller_groups
+#     )
+
 @bp.route('/order/<int:order_id>')
 @login_required
 def view_order_details(order_id):
@@ -278,6 +321,27 @@ def view_order_details(order_id):
         flash('Order not found or you do not have permission to view it', 'error')
         return redirect(url_for('index.purchase_history'))
 
+    # Get seller IDs from items
+    seller_ids = [item.seller_id for item in order.items]
+
+    # Get seller reviews to check if user has already reviewed any seller
+    seller_reviews = []
+    if seller_ids:
+        seller_reviews = Review.get_user_reviews_for_sellers(current_user.id, seller_ids)
+
+    # Get product reviews to check if user has already reviewed any product
+    product_ids = [item.product_id for item in order.items]
+    product_reviews = []
+    if product_ids:
+        product_reviews = Review.get_user_reviews_for_products(current_user.id, product_ids)
+
+    # Get seller ratings
+    seller_ratings = {}
+    for seller_id in seller_ids:
+        avg_rating, _ = Review.get_avg_rating_seller(seller_id)
+        if avg_rating:
+            seller_ratings[seller_id] = avg_rating
+
     # Group items by seller
     sellers = {}
     for item in order.items:
@@ -285,14 +349,13 @@ def view_order_details(order_id):
             sellers[item.seller_id] = {
                 'id': item.seller_id,
                 'name': item.seller_name,
-                'products': [],  # Changed from 'items' to 'products'
+                'products': [],
                 'subtotal': 0,
-                'status': 'Fulfilled'  # Will be set to 'Unfulfilled' if any item is unfulfilled
+                'status': 'Fulfilled'
             }
 
         # Add item to seller group
-        item.image = f"/static/uploads/{item.image}"
-        sellers[item.seller_id]['products'].append(item)  # Changed from 'items' to 'products'
+        sellers[item.seller_id]['products'].append(item)
 
         # Add to seller subtotal
         sellers[item.seller_id]['subtotal'] += item.get_subtotal()
@@ -307,5 +370,8 @@ def view_order_details(order_id):
     return render_template(
         'order_details.html',
         order=order,
-        seller_groups=seller_groups
+        seller_groups=seller_groups,
+        seller_reviews=seller_reviews,
+        product_reviews=product_reviews,
+        seller_ratings=seller_ratings
     )

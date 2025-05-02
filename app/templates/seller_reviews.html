@@ -2,28 +2,39 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/reviews.css') }}">
+<style>
+    /* Add any seller-specific CSS here */
+    .seller-card {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .rating-summary {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .stars i {
+        color: #ffc107;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-4">
-            <div class="card mb-4">
+            <!-- Seller Info Card -->
+            <div class="card mb-4 seller-card sticky-top" style="top: 20px;">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Seller Information</h5>
                 </div>
                 <div class="card-body">
-                    <div class="text-center mb-4">
-                        <div class="user-avatar mx-auto mb-3" style="width: 70px; height: 70px; font-size: 1.5rem;">
-                            {{ seller.first_name[0] }}{{ seller.last_name[0] }}
-                        </div>
-                        <h4>{{ seller.first_name }} {{ seller.last_name }}</h4>
-                        <p class="text-muted">Seller since {{ seller.created_at.strftime('%b %Y') if seller.created_at else 'N/A' }}</p>
-                    </div>
-                    
-                    <div class="rating-summary p-3 bg-light rounded">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="h2 mb-0 mr-2">{{ "%.1f"|format(avg_rating) }}</div>
+                    <h4>{{ seller.first_name }} {{ seller.last_name }}</h4>
+                    <p class="text-muted">Seller since {{ seller.created_at.strftime('%b %Y') if seller.created_at else 'N/A' }}</p>
+
+                    <div class="rating-summary mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="h2 mb-0 me-2">{{ "%.1f"|format(avg_rating) }}</div>
                             <div class="stars">
                                 {% for i in range(1, 6) %}
                                     {% if i <= avg_rating %}
@@ -38,74 +49,162 @@
                         </div>
                         <p class="mb-0">{{ review_count }} review{% if review_count != 1 %}s{% endif %}</p>
                     </div>
-                    
-                    <hr>
-                    
+
                     {% if current_user.is_authenticated and current_user.id != seller.id %}
-                        <div class="d-grid gap-2">
-                            <a href="{{ url_for('reviews.add_review', seller_id=seller.id) }}" class="btn btn-primary btn-block">
-                                <i class="fas fa-star"></i> Write a Review
-                            </a>
-                            <a href="#" class="btn btn-outline-primary btn-block mt-2">
-                                <i class="fas fa-envelope"></i> Contact Seller
-                            </a>
-                        </div>
+                        {% set has_reviewed = false %}
+                        {% for r in reviews %}
+                            {% if r.user_id == current_user.id %}
+                                {% set has_reviewed = true %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% set has_purchased = Order.has_user_purchased_from_seller(current_user.id, seller.id) %}
+
+                        {% if not has_reviewed and has_purchased %}
+                            <div class="d-grid">
+                                <a href="{{ url_for('reviews.add_review', seller_id=seller.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-star"></i> Write a Review
+                                </a>
+                            </div>
+                        {% elif has_reviewed %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> You've already reviewed this seller.
+                            </div>
+                        {% elif not has_purchased %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> You can only review sellers you've purchased from.
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-8">
+
+            <!-- Rating Distribution Card -->
             <div class="card mb-4">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Reviews ({{ review_count }})</h4>
-                    <div class="d-flex">
-                        <form method="get" class="d-flex align-items-center">
-                            <div class="form-group mr-2 mb-0">
-                                <select name="sort_by" id="sort_by" class="form-control form-control-sm" onchange="this.form.submit()">
-                                    <option value="date" {% if current_sort == 'date' %}selected{% endif %}>Latest</option>
-                                    <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest rated</option>
-                                </select>
-                            </div>
-                            <div class="form-group mb-0">
-                                <select name="rating" id="rating" class="form-control form-control-sm" onchange="this.form.submit()">
-                                    <option value="">All stars</option>
-                                    {% for i in range(5, 0, -1) %}
-                                    <option value="{{ i }}" {% if current_rating == i %}selected{% endif %}>{{ i }} stars</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </form>
-                    </div>
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Rating Distribution</h5>
                 </div>
                 <div class="card-body">
+                    {% for star in [5, 4, 3, 2, 1] %}
+                        {% set count = rating_distribution.get(star, 0) %}
+                        {% set percent = (count / review_count * 100) if review_count > 0 else 0 %}
+                        <div class="d-flex align-items-center mb-2">
+                            <div style="width: 40px;">{{ star }} <i class="fas fa-star text-warning"></i></div>
+                            <div class="progress flex-grow-1 mx-2" style="height: 10px;">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percent }}%;"
+                                     aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div style="width: 30px; text-align: right;">{{ count }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Reviews Card -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Customer Reviews</h4>
+                    <div>
+                        <select class="form-select form-select-sm" id="sort-reviews">
+                            <option value="helpful">Most Helpful</option>
+                            <option value="recent">Most Recent</option>
+                            <option value="highest">Highest Rated</option>
+                            <option value="lowest">Lowest Rated</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
                     {% if reviews %}
+                        <ul class="list-group list-group-flush">
                         {% for review in reviews %}
-                            <div class="review-card mb-4">
-                                <div class="review-header">
-                                    <div class="review-author">
-                                        <div class="user-avatar">
-                                            {{ review.username[0] if review.username else '?' }}
-                                        </div>
-                                        <div>{{ review.username }}</div>
+                            <li class="list-group-item review-card" id="review-{{ review.review_id }}">
+                                <div class="review-header d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <a href="{{ url_for('reviews.user_reviews', user_id=review.user_id) }}">
+                                            <i class="fas fa-user-circle"></i> User {{ review.user_id }}
+                                        </a>
+                                        <span class="review-date">
+                                            <i class="far fa-calendar-alt"></i> {{ review.review_date.strftime('%B %d, %Y') }}
+                                        </span>
                                     </div>
-                                    <div class="stars">
-                                        {% for i in range(review.rating) %}
-                                            <i class="fas fa-star"></i>
-                                        {% endfor %}
-                                        {% for i in range(5 - review.rating) %}
-                                            <i class="far fa-star stars-empty"></i>
+
+                                    <div class="review-rating">
+                                        {% for i in range(1, 6) %}
+                                            <i class="{% if i <= review.rating %}fas{% else %}far{% endif %} fa-star"></i>
                                         {% endfor %}
                                     </div>
                                 </div>
+
                                 <div class="review-body">
                                     <p class="review-text">{{ review.comment }}</p>
-                                    <div class="mt-2 text-muted">
-                                        <small>Posted: {{ review.review_date.strftime('%Y-%m-%d') }}</small>
-                                    </div>
                                 </div>
-                            </div>
+
+                                <div class="review-footer d-flex justify-content-between align-items-center">
+                                    <div class="vote-container">
+                                        {% if current_user.is_authenticated %}
+                                            {% set can_vote = current_user.id != review.user_id %}
+
+                                            <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline">
+                                                <input type="hidden" name="vote_type" value="1">
+                                                <button type="submit" class="vote-btn {% if review.user_vote == 1 %}active{% endif %}"
+                                                        {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
+                                                    <i class="fas fa-thumbs-up"></i> {{ review.upvotes }}
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" action="{{ url_for('reviews.vote_review', review_id=review.review_id) }}" class="d-inline">
+                                                <input type="hidden" name="vote_type" value="-1">
+                                                <button type="submit" class="vote-btn down {% if review.user_vote == -1 %}active{% endif %}"
+                                                        {% if not can_vote %}disabled title="Cannot vote on your own review"{% endif %}>
+                                                    <i class="fas fa-thumbs-down"></i> {{ review.downvotes }}
+                                                </button>
+                                            </form>
+
+                                            <span class="helpfulness-score">
+                                                <i class="fas fa-award"></i> {{ review.upvotes - review.downvotes }} helpful
+                                            </span>
+                                        {% else %}
+                                            <button type="button" class="vote-btn" disabled>
+                                                <i class="fas fa-thumbs-up"></i> {{ review.upvotes }}
+                                            </button>
+                                            <button type="button" class="vote-btn down" disabled>
+                                                <i class="fas fa-thumbs-down"></i> {{ review.downvotes }}
+                                            </button>
+                                            <span class="helpfulness-score">
+                                                <i class="fas fa-award"></i> {{ review.upvotes - review.downvotes }} helpful
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if current_user.is_authenticated and current_user.id == review.user_id %}
+                                        <div>
+                                            <a href="{{ url_for('reviews.edit_review', review_id=review.review_id) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-review" data-review-id="{{ review.review_id }}">
+                                                <i class="fas fa-trash-alt"></i> Delete
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </li>
                         {% endfor %}
+                        </ul>
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
@@ -118,14 +217,63 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Review Modal -->
+<div class="modal fade" id="deleteReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this review? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 <script>
-    $(document).ready(function() {
-        $('#sort_by, #rating').change(function() {
-            $(this).closest('form').submit();
-        });
+$(document).ready(function() {
+    // Review sorting
+    $('#sort-reviews').change(function() {
+        // In a real app, you'd use AJAX to fetch sorted reviews
+        // or reload the page with a sort parameter
+        window.location.href = window.location.pathname + '?sort=' + $(this).val();
     });
+
+    // Delete review confirmation
+    let reviewToDelete = null;
+
+    $('.delete-review').click(function() {
+        reviewToDelete = $(this).data('review-id');
+        $('#deleteReviewModal').modal('show');
+    });
+
+    $('#confirmDeleteBtn').click(function() {
+        if (reviewToDelete) {
+            $.ajax({
+                url: '/api/reviews/delete/' + reviewToDelete,
+                type: 'DELETE',
+                success: function(result) {
+                    if (result.success) {
+                        $('#review-' + reviewToDelete).fadeOut(function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        alert('Delete failed: ' + result.error);
+                    }
+                }
+            });
+        }
+        $('#deleteReviewModal').modal('hide');
+    });
+});
 </script>
 {% endblock %}

@@ -1,157 +1,204 @@
 {% extends "layout.html" %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Reviews</h2>
+{% block title %}Order #{{ order.order_id }} Details | Gingerbread Marketplace{% endblock %}
 
-        <!-- Recent reviews toggle button -->
-        {% if show_recent %}
-            <a href="{{ url_for('reviews.user_reviews_page') }}" class="btn btn-outline-primary">
-                <i class="fas fa-list"></i> Show All Reviews
+{% block content %}
+<div class="container mt-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('index.purchase_history') }}">Purchase History</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Order #{{ order.order_id }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Order #{{ order.order_id }}</h5>
+            <span class="badge {% if order.order_status == 'Fulfilled' %}bg-success{% elif order.order_status == 'Processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ order.order_status }}
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted">Order Information</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <th class="ps-0" style="width: 120px;">Order Date:</th>
+                            <td>{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-0">Order Status:</th>
+                            <td>{{ order.order_status }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-0">Total Items:</th>
+                            <td>{{ order.num_products }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-0">Total Amount:</th>
+                            <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted">Shipping Information</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <th class="ps-0" style="width: 120px;">Recipient:</th>
+                            <td>{{ order.buyer_name }}</td>
+                        </tr>
+                        <tr>
+                            <th class="ps-0">Address:</th>
+                            <td>{{ order.address }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% for seller_group in seller_groups %}
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Seller: <a href="{{ url_for('users.public_profile', user_id=seller_group.id) }}">{{ seller_group.name }}</a></h5>
+            <span class="badge {% if seller_group.status == 'Fulfilled' %}bg-success{% elif seller_group.status == 'Processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                Status: {{ seller_group.status }}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle"> <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Subtotal</th>
+                            <th class="text-center">Item Status</th>
+                            <th class="text-end">Actions</th> </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in seller_group.products %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if item.image %}
+                                    <img src="{{ item.image }}" alt="{{ item.product_name }}" class="me-3 rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="me-3 bg-light rounded" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-box fa-2x text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-0"><a href="{{ url_for('product.product_detail', product_id=item.product_id) }}" class="text-dark text-decoration-none">{{ item.product_name }}</a></h6>
+                                        <small class="text-muted">Product ID: {{ item.product_id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">${{ "%.2f"|format(item.price) }}</td>
+                            <td class="text-end">${{ "%.2f"|format(item.get_subtotal()) }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if item.status == 'Fulfilled' %}bg-success{% elif item.status == 'Processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ item.status }}
+                                </span>
+                                {% if item.status == 'Fulfilled' and item.fulfillment_date %}
+                                <div class="small text-muted mt-1">{{ item.fulfillment_date.strftime('%Y-%m-%d') }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {# Review Product Logic - Assuming 'product_reviews' is passed similarly to seller_reviews #}
+                                {% if current_user.is_authenticated %}
+                                    {% set has_reviewed_product = false %}
+                                    {% if product_reviews %} {# Check if product_reviews exists #}
+                                        {% for pr in product_reviews %}
+                                            {% if pr.user_id == current_user.id and pr.product_id == item.product_id %}
+                                                {% set has_reviewed_product = true %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {% if item.status == 'Fulfilled' %}
+                                        {% if not has_reviewed_product %}
+                                            <a href="{{ url_for('reviews.add_review', product_id=item.product_id, order_id=order.order_id) }}" class="btn btn-sm btn-outline-primary mb-1 d-block">
+                                                <i class="fas fa-star me-1"></i> Review Product
+                                            </a>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border mb-1 d-block">
+                                                <i class="fas fa-check me-1"></i> Product Reviewed
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                                <a href="{{ url_for('product.product_detail', product_id=item.product_id) }}" class="btn btn-sm btn-outline-secondary d-block">
+                                    <i class="fas fa-eye me-1"></i> View Product
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="3" class="text-end pt-3 pb-3">Seller Subtotal:</th>
+                            <th class="text-end pt-3 pb-3">${{ "%.2f"|format(seller_group.subtotal) }}</th>
+                            <th colspan="2"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-between align-items-center bg-light">
+            <div> {% if current_user.is_authenticated and current_user.id != seller_group.id %}
+                    {% set has_reviewed_seller = false %}
+                    {# Check if seller_reviews (passed from Flask route) exists and is not None before iterating #}
+                    {# Assumes seller_reviews contains review objects for this specific order/context #}
+                    {% if seller_reviews %}
+                        {% for r in seller_reviews %}
+                            {# Check if the review is specifically for this seller by this user #}
+                            {% if r.user_id == current_user.id and r.seller_id == seller_group.id %}
+                                {% set has_reviewed_seller = true %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                    {# Show review button only if seller's part of order is fulfilled and user hasn't reviewed yet #}
+                    {% if not has_reviewed_seller and seller_group.status == 'Fulfilled' %}
+                        <a href="{{ url_for('reviews.add_review', seller_id=seller_group.id, order_id=order.order_id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-star me-1"></i> Review Seller
+                        </a>
+                    {% elif has_reviewed_seller %}
+                         {# Show if user has already reviewed this seller #}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-check me-1"></i> Seller Reviewed
+                        </span>
+                    {% else %}
+                        {# Optional: Placeholder if not fulfilled yet #}
+                         <span class="text-muted small">Review seller once fulfilled</span>
+                    {% endif %}
+                {% elif current_user.is_authenticated and current_user.id == seller_group.id %}
+                    {# Optional: Message for the seller viewing their own order #}
+                    <span class="text-muted small">This is your seller section</span>
+                {% endif %}
+                {# Note: If user is not authenticated, nothing shows here regarding seller reviews #}
+            </div>
+
+            <a href="#" class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true"> <i class="fas fa-envelope me-1"></i> Contact Seller (Soon)
             </a>
-        {% else %}
-            <a href="{{ url_for('reviews.user_reviews_page', recent=1) }}" class="btn btn-primary">
-                <i class="fas fa-clock"></i> Show 5 Most Recent
-            </a>
+        </div>
+        </div>
+    {% endfor %}
+
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <a href="{{ url_for('index.purchase_history') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Purchase History
+        </a>
+        {% if order.order_status == 'Fulfilled' %}
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print Order Summary
+        </button>
         {% endif %}
     </div>
-
-    <!-- Only show filters when viewing all reviews -->
-    {% if not show_recent %}
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <form method="get" class="form-inline">
-                    <div class="form-group mr-2">
-                        <label for="sort_by">Sort by:</label>
-                        <select name="sort_by" id="sort_by" class="form-control ml-2" onchange="this.form.submit()">
-                            <option value="date" {% if current_sort == 'date' %}selected{% endif %}>Date</option>
-                            <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Rating</option>
-                        </select>
-                    </div>
-                    <div class="form-group mr-2">
-                        <label for="sort_order">Order:</label>
-                        <select name="sort_order" id="sort_order" class="form-control ml-2" onchange="this.form.submit()">
-                            <option value="desc" {% if current_order == 'desc' %}selected{% endif %}>Descending</option>
-                            <option value="asc" {% if current_order == 'asc' %}selected{% endif %}>Ascending</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="rating">Filter by rating:</label>
-                        <select name="rating" id="rating" class="form-control ml-2" onchange="this.form.submit()">
-                            <option value="">All</option>
-                            {% for i in range(1, 6) %}
-                            <option value="{{ i }}" {% if current_rating == i %}selected{% endif %}>{{ i }} stars</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </form>
-            </div>
-        </div>
-    {% endif %}
-
-    {% if show_recent %}
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> Showing your 5 most recent reviews
-        </div>
-    {% endif %}
-
-    {% if not reviews %}
-    <div class="alert alert-info">
-        You haven't written any reviews yet.
-    </div>
-    {% else %}
-    <div class="row">
-        {% for review in reviews %}
-        <div class="col-md-12 mb-4">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    {% if review.product_id %}
-                    <h5>Product Review</h5>
-                    {% else %}
-                    <h5>Seller Review</h5>
-                    {% endif %}
-                    <div>
-                        {% for i in range(review.rating) %}
-                        <span class="text-warning">★</span>
-                        {% endfor %}
-                        {% for i in range(5 - review.rating) %}
-                        <span class="text-secondary">☆</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">{{ review.comment }}</p>
-
-                    {% if review.product_id %}
-                    <a href="{{ url_for('product.product_detail', product_id=review.product_id) }}" class="btn btn-sm btn-info">View Product</a>
-                    {% endif %}
-
-                    {% if review.seller_id %}
-                    <a href="{{ url_for('reviews.seller_reviews', seller_id=review.seller_id) }}" class="btn btn-sm btn-info">View Seller</a>
-                    {% endif %}
-
-                    <div class="mt-2 text-muted">
-                        Posted: {{ review.review_date.strftime('%Y-%m-%d %H:%M') }}
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ url_for('reviews.edit_review', review_id=review.review_id) }}" class="btn btn-sm btn-warning">Edit</a>
-                    <button class="btn btn-sm btn-danger delete-review" data-review-id="{{ review.review_id }}">Delete</button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
 </div>
 
-<div class="modal fade" id="deleteReviewModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Deletion</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p> This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    $(document).ready(function() {
-        // Delete review functionality
-        let reviewToDelete = null;
-
-        $('.delete-review').click(function() {
-            reviewToDelete = $(this).data('review-id');
-            $('#deleteReviewModal').modal('show');
-        });
-
-        $('#confirmDelete').click(function() {
-            if (reviewToDelete) {
-                $.ajax({
-                    url: '/api/reviews/delete/' + reviewToDelete,
-                    type: 'DELETE',
-                    success: function(result) {
-                        if (result.success) {
-                            location.reload();
-                        } else {
-                            alert('Delete failed: ' + result.error);
-                        }
-                    }
-                });
-            }
-            $('#deleteReviewModal').modal('hide');
-        });
-    });
-</script>
 {% endblock %}

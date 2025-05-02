@@ -15,7 +15,7 @@
     <div class="card mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Order #{{ order.order_id }}</h5>
-            <span class="badge {% if order.order_status == 'Fulfilled' %}bg-success{% else %}bg-warning{% endif %}">
+            <span class="badge {% if order.order_status == 'Fulfilled' %}bg-success{% elif order.order_status == 'Processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                 {{ order.order_status }}
             </span>
         </div>
@@ -25,7 +25,7 @@
                     <h6 class="text-muted">Order Information</h6>
                     <table class="table table-sm table-borderless">
                         <tr>
-                            <th class="ps-0">Order Date:</th>
+                            <th class="ps-0" style="width: 120px;">Order Date:</th>
                             <td>{{ order.order_date.strftime('%Y-%m-%d %H:%M') }}</td>
                         </tr>
                         <tr>
@@ -46,7 +46,7 @@
                     <h6 class="text-muted">Shipping Information</h6>
                     <table class="table table-sm table-borderless">
                         <tr>
-                            <th class="ps-0">Recipient:</th>
+                            <th class="ps-0" style="width: 120px;">Recipient:</th>
                             <td>{{ order.buyer_name }}</td>
                         </tr>
                         <tr>
@@ -59,26 +59,33 @@
         </div>
     </div>
 
-    <!-- Seller sections -->
     {% for seller_group in seller_groups %}
     <div class="card mb-4">
         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Seller: {{ seller_group.name }}</h5>
-            <span class="badge {% if seller_group.status == 'Fulfilled' %}bg-success{% else %}bg-warning{% endif %}">
-                {{ seller_group.status }}
+            <h5 class="mb-0">
+                Seller: <a href="{{ url_for('users.public_profile', user_id=seller_group.id) }}">{{ seller_group.name }}</a>
+                {% if seller_ratings and seller_group.id in seller_ratings %}
+                <span class="badge bg-warning text-dark ms-2">
+                    {{ "%.1f"|format(seller_ratings[seller_group.id]) }}
+                    <i class="fas fa-star"></i>
+                </span>
+                {% endif %}
+            </h5>
+            <span class="badge {% if seller_group.status == 'Fulfilled' %}bg-success{% elif seller_group.status == 'Processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                Status: {{ seller_group.status }}
             </span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
                             <th>Product</th>
                             <th class="text-center">Quantity</th>
                             <th class="text-end">Price</th>
                             <th class="text-end">Subtotal</th>
-                            <th class="text-center">Status</th>
-                            <th></th>
+                            <th class="text-center">Item Status</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -87,15 +94,15 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     {% if item.image %}
-                                    <img src="{{ item.image }}" alt="{{ item.product_name }}" class="me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <img src="{{ item.image }}" alt="{{ item.product_name }}" class="me-3 rounded" style="width: 60px; height: 60px; object-fit: cover;">
                                     {% else %}
-                                    <div class="me-3 bg-light" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-                                        <i class="fas fa-box text-muted"></i>
+                                    <div class="me-3 bg-light rounded" style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-box fa-2x text-muted"></i>
                                     </div>
                                     {% endif %}
                                     <div>
-                                        <h6 class="mb-0">{{ item.product_name }}</h6>
-                                        <a href="{{ url_for('product.product_detail', product_id=item.product_id) }}" class="text-muted small">View Product</a>
+                                        <h6 class="mb-0"><a href="{{ url_for('product.product_detail', product_id=item.product_id) }}" class="text-dark text-decoration-none">{{ item.product_name }}</a></h6>
+                                        <small class="text-muted">Product ID: {{ item.product_id }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -103,51 +110,101 @@
                             <td class="text-end">${{ "%.2f"|format(item.price) }}</td>
                             <td class="text-end">${{ "%.2f"|format(item.get_subtotal()) }}</td>
                             <td class="text-center">
-                                <span class="badge {% if item.status == 'Fulfilled' %}bg-success{% else %}bg-warning{% endif %}">
+                                <span class="badge {% if item.status == 'Fulfilled' %}bg-success{% elif item.status == 'Processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                                     {{ item.status }}
                                 </span>
                                 {% if item.status == 'Fulfilled' and item.fulfillment_date %}
-                                <div class="small text-muted">{{ item.fulfillment_date.strftime('%Y-%m-%d') }}</div>
+                                <div class="small text-muted mt-1">{{ item.fulfillment_date.strftime('%Y-%m-%d') }}</div>
                                 {% endif %}
                             </td>
                             <td class="text-end">
-                                {% if item.status == 'Fulfilled' %}
-                                <a href="{{ url_for('reviews.add_review', product_id=item.product_id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-star me-1"></i> Review
-                                </a>
+                                {% if current_user.is_authenticated %}
+                                    {% set has_reviewed_product = false %}
+                                    {% if product_reviews %}
+                                        {% for pr in product_reviews %}
+                                            {% if pr.user_id == current_user.id and pr.product_id == item.product_id %}
+                                                {% set has_reviewed_product = true %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {% if item.status == 'Fulfilled' %}
+                                        {% if not has_reviewed_product %}
+                                            <a href="{{ url_for('reviews.add_review', product_id=item.product_id, order_id=order.order_id) }}" class="btn btn-sm btn-outline-primary mb-1 d-block">
+                                                <i class="fas fa-star me-1"></i> Review Product
+                                            </a>
+                                        {% else %}
+                                            <span class="badge bg-success mb-1 d-block">
+                                                <i class="fas fa-check me-1"></i> Product Reviewed
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
                                 {% endif %}
+                                <a href="{{ url_for('product.product_detail', product_id=item.product_id) }}" class="btn btn-sm btn-outline-secondary d-block">
+                                    <i class="fas fa-eye me-1"></i> View Product
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <th colspan="3" class="text-end">Seller Subtotal:</th>
-                            <th class="text-end">${{ "%.2f"|format(seller_group.subtotal) }}</th>
+                            <th colspan="3" class="text-end pt-3 pb-3">Seller Subtotal:</th>
+                            <th class="text-end pt-3 pb-3">${{ "%.2f"|format(seller_group.subtotal) }}</th>
                             <th colspan="2"></th>
                         </tr>
                     </tfoot>
                 </table>
             </div>
         </div>
-        <div class="card-footer d-flex justify-content-between">
-            <a href="{{ url_for('reviews.add_review', seller_id=seller_group.id) }}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-star me-1"></i> Review Seller
-            </a>
-            <a href="#" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-envelope me-1"></i> Contact Seller
-            </a>
+        <div class="card-footer d-flex justify-content-between align-items-center bg-light">
+            <div>
+                {% if current_user.is_authenticated and current_user.id != seller_group.id %}
+                    {% set has_reviewed_seller = false %}
+                    {% if seller_reviews %}
+                        {% for r in seller_reviews %}
+                            {% if r.user_id == current_user.id and r.seller_id == seller_group.id %}
+                                {% set has_reviewed_seller = true %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if not has_reviewed_seller and seller_group.status == 'Fulfilled' %}
+                        <a href="{{ url_for('reviews.add_review', seller_id=seller_group.id, order_id=order.order_id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-star me-1"></i> Review Seller
+                        </a>
+                    {% elif has_reviewed_seller %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check me-1"></i> Seller Reviewed
+                        </span>
+                        <a href="{{ url_for('reviews.seller_reviews', seller_id=seller_group.id) }}" class="btn btn-sm btn-outline-secondary ms-2">
+                            <i class="fas fa-eye me-1"></i> View Reviews
+                        </a>
+                    {% else %}
+                        <span class="text-muted small">You can review the seller once the order is fulfilled</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <div>
+                <a href="{{ url_for('reviews.seller_reviews', seller_id=seller_group.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-comments me-1"></i> View Seller Reviews
+                </a>
+                <a href="#" class="btn btn-outline-secondary btn-sm ms-2">
+                    <i class="fas fa-envelope me-1"></i> Contact Seller
+                </a>
+            </div>
         </div>
     </div>
     {% endfor %}
 
-    <div class="d-flex justify-content-between mt-4">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
         <a href="{{ url_for('index.purchase_history') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>Back to Purchase History
         </a>
         {% if order.order_status == 'Fulfilled' %}
         <button type="button" class="btn btn-primary" onclick="window.print()">
-            <i class="fas fa-print me-2"></i>Print Order
+            <i class="fas fa-print me-2"></i>Print Order Summary
         </button>
         {% endif %}
     </div>
