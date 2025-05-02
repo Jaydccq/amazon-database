@@ -5,7 +5,7 @@ The Gingerbread Standard Project is a web-based e-commerce platform designed to 
 This project is being developed collaboratively by a team of five, each specializing in a different aspect of the system.
 
 Final milestone demo video: 
-https://youtu.be/t9DdCd9d8x0
+https://www.youtube.com/watch?v=ENlNnMFfgxc
 
 GitLab Repository:
 https://gitlab.oit.duke.edu/Cindy_Gao/gingerbread-standard-project
